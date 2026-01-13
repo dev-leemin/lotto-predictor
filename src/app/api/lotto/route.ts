@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import { analyzeLottoCDM, LottoResultData } from '@/lib/cdm-predictor'
 
@@ -9,12 +9,18 @@ let cachedResponse: Record<string, unknown> | null = null
 let lastFetchTime = 0
 const CACHE_DURATION = 1000 * 60 * 60 // 1시간
 
-export async function GET() {
+// GET /api/lotto?round=1200 (특정 회차) 또는 GET /api/lotto (최신)
+export async function GET(request: NextRequest) {
   try {
     const now = Date.now()
+    const searchParams = request.nextUrl.searchParams
+    const targetRound = searchParams.get('round') ? parseInt(searchParams.get('round')!) : null
 
-    // 캐시된 데이터가 있고 1시간 이내면 재사용
-    if (cachedResponse && now - lastFetchTime < CACHE_DURATION) {
+    // 특정 회차 조회 시 캐시 사용 안함
+    const useCache = !targetRound
+
+    // 캐시된 데이터가 있고 1시간 이내면 재사용 (최신 조회 시에만)
+    if (useCache && cachedResponse && now - lastFetchTime < CACHE_DURATION) {
       return NextResponse.json({
         ...cachedResponse,
         cached: true,
@@ -22,15 +28,33 @@ export async function GET() {
     }
 
     // DB에서 로또 데이터 조회
+    // targetRound가 있으면 해당 회차 직전까지만, 없으면 전체
+    const whereClause = targetRound ? { round: { lt: targetRound } } : {}
     const dbResults = await prisma.lottoResult.findMany({
+      where: whereClause,
       orderBy: { round: 'asc' },
     })
 
     if (dbResults.length === 0) {
       return NextResponse.json(
-        { error: 'DB에 로또 데이터가 없습니다. 시딩을 먼저 실행해주세요.' },
+        { error: 'DB에 로또 데이터가 없습니다.' },
         { status: 404 }
       )
+    }
+
+    if (dbResults.length < 10) {
+      return NextResponse.json(
+        { error: `데이터가 충분하지 않습니다. (최소 10회차 필요, 현재 ${dbResults.length}회차)` },
+        { status: 400 }
+      )
+    }
+
+    // 해당 회차의 실제 당첨번호 (특정 회차 조회 시)
+    let actualResult = null
+    if (targetRound) {
+      actualResult = await prisma.lottoResult.findUnique({
+        where: { round: targetRound },
+      })
     }
 
     // CDM 분석을 위한 데이터 변환
@@ -50,28 +74,59 @@ export async function GET() {
       return days[date.getDay()]
     }
 
-    // 최근 10회차 당첨번호 추가
-    const recentResults = dbResults.slice(-10).reverse().map(r => ({
+    // 최근 5회차 당첨번호
+    const recentResults = dbResults.slice(-5).reverse().map(r => ({
       round: r.round,
       date: r.date,
       dayOfWeek: getDayOfWeek(r.date),
       numbers: [r.num1, r.num2, r.num3, r.num4, r.num5, r.num6].sort((a, b) => a - b),
       bonus: r.bonus,
-      firstPrize: r.firstPrize ? Number(r.firstPrize) : 0,
-      firstWinners: r.firstWinners || 0,
     }))
 
-    // 최신 회차 정보
+    // 최신 회차 정보 (분석 기준)
     const latestResult = dbResults[dbResults.length - 1]
 
-    // 캐시 업데이트
+    // 실제 당첨번호와 비교 (특정 회차 조회 시)
+    let matchInfo = null
+    if (actualResult) {
+      const actualNumbers = [
+        actualResult.num1, actualResult.num2, actualResult.num3,
+        actualResult.num4, actualResult.num5, actualResult.num6
+      ].sort((a, b) => a - b)
+
+      // TOP 15 번호 중 맞춘 개수
+      const top15Numbers = analysis.rankedNumbers.slice(0, 15).map(r => r.number)
+      const matchedInTop15 = actualNumbers.filter(n => top15Numbers.includes(n))
+
+      // 추천 세트별 맞춘 개수
+      const setMatches = analysis.recommendedSets.map(set => ({
+        set: set.set,
+        method: set.method,
+        numbers: set.numbers,
+        matched: actualNumbers.filter(n => set.numbers.includes(n)).length,
+        matchedNumbers: actualNumbers.filter(n => set.numbers.includes(n)),
+      }))
+
+      matchInfo = {
+        targetRound,
+        actualNumbers,
+        actualBonus: actualResult.bonus,
+        actualDate: actualResult.date,
+        top15Matched: matchedInTop15.length,
+        top15MatchedNumbers: matchedInTop15,
+        setMatches: setMatches.sort((a, b) => b.matched - a.matched),
+        bestSetMatch: Math.max(...setMatches.map(s => s.matched)),
+      }
+    }
+
+    // 응답 데이터
     const responseData = {
       ...analysis,
       recentResults,
       latestDate: latestResult.date,
       latestDayOfWeek: getDayOfWeek(latestResult.date),
       totalRounds: dbResults.length,
-      nextRound: analysis.latestRound + 1,
+      nextRound: targetRound || analysis.latestRound + 1,
       totalResults: dbResults.length,
       patterns: {
         sumRange: { min: 21, max: 255, avg: 138 },
@@ -79,11 +134,16 @@ export async function GET() {
         highLowMostCommon: '3:3',
         consecutivePairsPercent: 60,
       },
+      matchInfo,
+      isHistorical: !!targetRound,
       lastUpdate: new Date().toISOString(),
     }
 
-    cachedResponse = responseData
-    lastFetchTime = now
+    // 최신 조회 시에만 캐시 저장
+    if (useCache) {
+      cachedResponse = responseData
+      lastFetchTime = now
+    }
 
     return NextResponse.json({
       ...responseData,
@@ -95,6 +155,8 @@ export async function GET() {
       { error: '분석 중 오류가 발생했습니다.', details: String(error) },
       { status: 500 }
     )
+  } finally {
+    await prisma.$disconnect()
   }
 }
 

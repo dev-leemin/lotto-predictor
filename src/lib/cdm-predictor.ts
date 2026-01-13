@@ -419,6 +419,7 @@ export interface PensionCDMResult {
     group: number
     numbers: number[]
     score: number
+    method?: string
   }>
   latestRound: number
 }
@@ -482,10 +483,11 @@ export function analyzePensionCDM(results: PensionResultData[]): PensionCDMResul
     digitPredictions.push(predictions)
   }
 
-  // 3. 추천 세트 생성 (15개) - 순수 CDM 확률 기반
+  // 3. 추천 세트 생성 (15개) - 조 상관없이 6자리 번호만 추천
+  // 연금복권은 조가 달라도 뒤 6자리만 맞으면 2등 이하 당첨 가능
   const recommendedSets: Array<{
     set: number
-    group: number
+    group: number  // 참고용 (CDM 최고확률 조)
     numbers: number[]
     score: number
     method?: string
@@ -493,42 +495,54 @@ export function analyzePensionCDM(results: PensionResultData[]): PensionCDMResul
 
   const usedCombinations = new Set<string>()
 
-  // 순수 CDM 점수 계산
-  const calculatePureCDMScore = (group: number, numbers: number[]): number => {
-    const gp = groupPrediction.find(g => g.group === group)
-    let score = gp ? gp.score : 0
-
+  // 순수 CDM 점수 계산 (6자리 번호만)
+  const calculatePureCDMScore = (numbers: number[]): number => {
+    let score = 0
     numbers.forEach((digit, pos) => {
       const pred = digitPredictions[pos].find(p => p.digit === digit)
       if (pred) score += pred.cdmScore
     })
-
     return Math.round(score * 10000) / 10000
   }
 
-  // 1~5. 각 자릿수 TOP1 조합 (조별)
-  for (const gp of groupPrediction) {
+  // CDM 최고확률 조 (참고용)
+  const bestGroup = groupPrediction[0].group
+
+  // 1. CDM TOP1 조합 (각 자리 최고확률)
+  const top1Numbers = digitPredictions.map(dp => dp[0].digit)
+  usedCombinations.add(top1Numbers.join(''))
+  recommendedSets.push({
+    set: 1,
+    group: bestGroup,
+    numbers: top1Numbers,
+    score: calculatePureCDMScore(top1Numbers),
+    method: 'CDM TOP1 최고확률',
+  })
+
+  // 2~5. CDM TOP 순위 조합
+  for (let rank = 1; rank <= 4 && recommendedSets.length < 5; rank++) {
     const numbers: number[] = []
     for (let pos = 0; pos < 6; pos++) {
-      numbers.push(digitPredictions[pos][0].digit) // TOP1
+      // 각 자리별로 rank번째 높은 확률 선택
+      const idx = Math.min(rank, digitPredictions[pos].length - 1)
+      numbers.push(digitPredictions[pos][idx].digit)
     }
 
-    const key = `${gp.group}-${numbers.join('')}`
+    const key = numbers.join('')
     if (!usedCombinations.has(key)) {
       usedCombinations.add(key)
       recommendedSets.push({
         set: recommendedSets.length + 1,
-        group: gp.group,
+        group: bestGroup,
         numbers,
-        score: calculatePureCDMScore(gp.group, numbers),
-        method: `CDM TOP1 (${gp.group}조)`,
+        score: calculatePureCDMScore(numbers),
+        method: `CDM TOP${rank + 1}`,
       })
     }
   }
 
   // 6~10. CDM 가중 랜덤 샘플링
-  for (let variant = 0; variant < 5 && recommendedSets.length < 10; variant++) {
-    const group = groupPrediction[variant % 5].group
+  for (let variant = 0; variant < 10 && recommendedSets.length < 10; variant++) {
     const numbers: number[] = []
 
     for (let pos = 0; pos < 6; pos++) {
@@ -549,42 +563,41 @@ export function analyzePensionCDM(results: PensionResultData[]): PensionCDMResul
       }
     }
 
-    const key = `${group}-${numbers.join('')}`
+    const key = numbers.join('')
     if (!usedCombinations.has(key)) {
       usedCombinations.add(key)
       recommendedSets.push({
         set: recommendedSets.length + 1,
-        group,
+        group: bestGroup,
         numbers,
-        score: calculatePureCDMScore(group, numbers),
-        method: `CDM 확률가중 #${variant + 1}`,
+        score: calculatePureCDMScore(numbers),
+        method: `CDM 확률가중 #${recommendedSets.length - 4}`,
       })
     }
   }
 
   // 11~15. 베이지안 사후확률 기반 조합
-  for (let variant = 0; variant < 5 && recommendedSets.length < 15; variant++) {
-    const group = groupPrediction[variant % 5].group
+  for (let variant = 0; variant < 10 && recommendedSets.length < 15; variant++) {
     const numbers: number[] = []
 
     for (let pos = 0; pos < 6; pos++) {
-      // 베이지안 사후확률 순 정렬 후 상위 선택
       const bayesianSorted = [...digitPredictions[pos]].sort(
         (a, b) => b.bayesianPosterior - a.bayesianPosterior
       )
-      const idx = Math.min(variant, bayesianSorted.length - 1)
+      // 각 자리마다 다른 순위 조합
+      const idx = (variant + pos) % bayesianSorted.length
       numbers.push(bayesianSorted[idx].digit)
     }
 
-    const key = `${group}-${numbers.join('')}`
+    const key = numbers.join('')
     if (!usedCombinations.has(key)) {
       usedCombinations.add(key)
       recommendedSets.push({
         set: recommendedSets.length + 1,
-        group,
+        group: bestGroup,
         numbers,
-        score: calculatePureCDMScore(group, numbers),
-        method: `베이지안 #${variant + 1}`,
+        score: calculatePureCDMScore(numbers),
+        method: `베이지안 #${recommendedSets.length - 9}`,
       })
     }
   }

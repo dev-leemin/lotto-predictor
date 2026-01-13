@@ -1,17 +1,20 @@
 'use client'
 
 interface PensionNumberProps {
-  group: number
+  group?: number
   numbers: number[]
+  showGroup?: boolean  // 조 표시 여부 (기본: true)
 }
 
-export function PensionNumber({ group, numbers }: PensionNumberProps) {
+export function PensionNumber({ group, numbers, showGroup = true }: PensionNumberProps) {
   return (
-    <div className="flex items-center gap-2">
-      {/* 조 번호 */}
-      <div className="w-10 h-12 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center font-bold text-white shadow-lg">
-        {group}조
-      </div>
+    <div className="flex items-center gap-2 justify-center">
+      {/* 조 번호 (선택적) */}
+      {showGroup && group && (
+        <div className="w-10 h-12 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center font-bold text-white shadow-lg">
+          {group}조
+        </div>
+      )}
 
       {/* 6자리 숫자 */}
       <div className="flex gap-1">

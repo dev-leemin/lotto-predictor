@@ -34,6 +34,23 @@ interface RecommendedSet {
   method?: string
 }
 
+interface LottoMatchInfo {
+  targetRound: number
+  actualNumbers: number[]
+  actualBonus: number
+  actualDate: string
+  top15Matched: number
+  top15MatchedNumbers: number[]
+  setMatches: Array<{
+    set: number
+    method: string
+    numbers: number[]
+    matched: number
+    matchedNumbers: number[]
+  }>
+  bestSetMatch: number
+}
+
 interface LottoFullAnalysis {
   rankedNumbers: RankedNumber[]
   recommendedSets: RecommendedSet[]
@@ -51,6 +68,8 @@ interface LottoFullAnalysis {
   nextRound: number
   cached: boolean
   lastUpdate: string
+  matchInfo?: LottoMatchInfo
+  isHistorical?: boolean
 }
 
 interface PensionAnalysis {
@@ -59,12 +78,51 @@ interface PensionAnalysis {
     numbers: number[]
     confidence: number
     reasons: string[]
+    cdmScore?: number
   }>
   hotByPosition: Array<{ position: number; hotNumbers: number[] }>
   coldByPosition: Array<{ position: number; coldNumbers: number[] }>
+  groupStats?: Array<{ group: number; score: number; frequency: number; probability: number }>
+  recommendedSets?: Array<{
+    set: number
+    group: number
+    numbers: number[]
+    score: number
+    method?: string
+    numberString?: string
+  }>
+  digitPredictions?: Array<{
+    position: number
+    top3: Array<{ digit: number; cdmScore: number; frequency: number }>
+  }>
+  recentResults?: Array<{
+    round: number
+    date: string
+    group: number
+    numbers: number[]
+  }>
   nextRound: number
   latestRound: number
   lastUpdate: string
+  method?: string
+  totalResults?: number
+  matchInfo?: {
+    targetRound: number
+    actualGroup: number
+    actualNumbers: number[]
+    actualDate: string
+    setMatches: Array<{
+      set: number
+      method: string
+      numbers: number[]
+      matchedDigits: number
+      matchedPositions: number[]
+      consecutiveFromEnd: number
+      prize: string
+    }>
+    bestConsecutiveMatch: number
+  }
+  isHistorical?: boolean
 }
 
 interface LoadingState {
@@ -110,6 +168,12 @@ export default function Home() {
     elapsedTime: 0,
   })
   const [error, setError] = useState<string | null>(null)
+
+  // 회차 선택 상태
+  const [selectedLottoRound, setSelectedLottoRound] = useState<number | null>(null)
+  const [selectedPensionRound, setSelectedPensionRound] = useState<number | null>(null)
+  const [lottoRoundInput, setLottoRoundInput] = useState<string>('')
+  const [pensionRoundInput, setPensionRoundInput] = useState<string>('')
 
   // 경과 시간 업데이트
   useEffect(() => {
@@ -166,12 +230,12 @@ export default function Home() {
     runStage()
   }, [])
 
-  const fetchLottoData = async () => {
+  const fetchLottoData = async (round?: number | null) => {
     const startTime = Date.now()
     setLoadingState({
       isLoading: true,
       progress: 0,
-      status: '초기화 중...',
+      status: round ? `${round}회차 예측 조회 중...` : '초기화 중...',
       startTime,
       elapsedTime: 0,
     })
@@ -181,7 +245,8 @@ export default function Home() {
     simulateProgress()
 
     try {
-      const res = await fetch('/api/lotto')
+      const url = round ? `/api/lotto?round=${round}` : '/api/lotto'
+      const res = await fetch(url)
       if (!res.ok) throw new Error('로또 데이터를 가져오는데 실패했습니다.')
       const data = await res.json()
 
@@ -195,6 +260,7 @@ export default function Home() {
 
       setTimeout(() => {
         setLottoData(data)
+        setSelectedLottoRound(round || null)
         setLoadingState({
           isLoading: false,
           progress: 0,
@@ -215,19 +281,20 @@ export default function Home() {
     }
   }
 
-  const fetchPensionData = async () => {
+  const fetchPensionData = async (round?: number | null) => {
     const startTime = Date.now()
     setLoadingState({
       isLoading: true,
       progress: 0,
-      status: '연금복권 데이터 수집 중...',
+      status: round ? `${round}회차 예측 조회 중...` : '연금복권 데이터 수집 중...',
       startTime,
       elapsedTime: 0,
     })
     setError(null)
 
     try {
-      const res = await fetch('/api/pension')
+      const url = round ? `/api/pension?round=${round}` : '/api/pension'
+      const res = await fetch(url)
       if (!res.ok) throw new Error('연금복권 데이터를 가져오는데 실패했습니다.')
       const data = await res.json()
 
@@ -241,6 +308,7 @@ export default function Home() {
 
       setTimeout(() => {
         setPensionData(data)
+        setSelectedPensionRound(round || null)
         setLoadingState({
           isLoading: false,
           progress: 0,
@@ -412,20 +480,158 @@ export default function Home() {
         {/* 로또 결과 */}
         {!loadingState.isLoading && !error && tab === 'lotto' && lottoData && (
           <div className="space-y-8">
+            {/* 회차 선택기 */}
+            <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <span className="text-sm text-gray-400">특정 회차 조회:</span>
+                <input
+                  type="number"
+                  value={lottoRoundInput}
+                  onChange={(e) => setLottoRoundInput(e.target.value)}
+                  placeholder={`예: ${lottoData.latestRound - 10}`}
+                  className="w-28 px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-center focus:outline-none focus:border-yellow-500"
+                />
+                <button
+                  onClick={() => {
+                    const round = parseInt(lottoRoundInput)
+                    if (round && round > 10 && round <= lottoData.latestRound) {
+                      fetchLottoData(round)
+                    }
+                  }}
+                  disabled={!lottoRoundInput || loadingState.isLoading}
+                  className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                >
+                  조회
+                </button>
+                {selectedLottoRound && (
+                  <button
+                    onClick={() => {
+                      setLottoRoundInput('')
+                      fetchLottoData(null)
+                    }}
+                    className="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    최신으로
+                  </button>
+                )}
+              </div>
+              {selectedLottoRound && (
+                <p className="text-center text-xs text-yellow-400 mt-2">
+                  {selectedLottoRound}회차 시점 예측 결과 조회 중
+                </p>
+              )}
+            </div>
+
             {/* 회차 정보 */}
-            <div className="text-center p-6 rounded-2xl bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/30">
-              <p className="text-sm text-gray-400 mb-1">다음 추첨</p>
+            <div className={`text-center p-6 rounded-2xl border ${
+              lottoData.isHistorical
+                ? 'bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/30'
+                : 'bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border-yellow-500/30'
+            }`}>
+              <p className="text-sm text-gray-400 mb-1">
+                {lottoData.isHistorical ? '조회 회차' : '다음 추첨'}
+              </p>
               <p className="text-3xl font-bold text-white mb-2">
                 제 {lottoData.nextRound}회
               </p>
               <p className="text-gray-400">
-                최근 추첨: {lottoData.latestRound}회 ({lottoData.latestDate} {lottoData.latestDayOfWeek}요일)
+                {lottoData.isHistorical
+                  ? `${lottoData.latestRound}회차까지 데이터로 예측`
+                  : `최근 추첨: ${lottoData.latestRound}회 (${lottoData.latestDate} ${lottoData.latestDayOfWeek}요일)`}
               </p>
               <p className="text-sm text-gray-500 mt-1">
                 총 {lottoData.totalRounds}회차 데이터 분석 완료
                 {lottoData.cached && <span className="ml-2 text-green-400">(캐시)</span>}
               </p>
             </div>
+
+            {/* 실제 당첨번호 비교 (과거 회차 조회 시) */}
+            {lottoData.matchInfo && (
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/30">
+                <h2 className="text-xl font-bold mb-4 text-green-400">
+                  {lottoData.matchInfo.targetRound}회 실제 당첨번호 비교
+                </h2>
+                <div className="mb-4">
+                  <p className="text-sm text-gray-400 mb-2">실제 당첨번호 ({lottoData.matchInfo.actualDate})</p>
+                  <div className="flex items-center justify-center gap-2 flex-wrap">
+                    {lottoData.matchInfo.actualNumbers.map((num, idx) => (
+                      <span
+                        key={idx}
+                        className={`w-10 h-10 rounded-full bg-gradient-to-br ${getBallColor(num)} flex items-center justify-center text-sm font-bold text-white shadow-lg`}
+                      >
+                        {num}
+                      </span>
+                    ))}
+                    <span className="mx-1 text-gray-500">+</span>
+                    <span className={`w-10 h-10 rounded-full bg-gradient-to-br ${getBallColor(lottoData.matchInfo.actualBonus)} flex items-center justify-center text-sm font-bold text-white shadow-lg opacity-60`}>
+                      {lottoData.matchInfo.actualBonus}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div className="p-4 rounded-xl bg-white/5">
+                    <p className="text-sm text-gray-400 mb-2">TOP 15 추천번호 적중</p>
+                    <p className="text-3xl font-bold text-green-400">
+                      {lottoData.matchInfo.top15Matched}개 / 6개
+                    </p>
+                    {lottoData.matchInfo.top15MatchedNumbers.length > 0 && (
+                      <div className="flex gap-1 mt-2 flex-wrap">
+                        {lottoData.matchInfo.top15MatchedNumbers.map((num, idx) => (
+                          <span key={idx} className="px-2 py-1 bg-green-500/30 rounded text-green-300 text-sm">
+                            {num}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4 rounded-xl bg-white/5">
+                    <p className="text-sm text-gray-400 mb-2">추천세트 최고 적중</p>
+                    <p className="text-3xl font-bold text-yellow-400">
+                      {lottoData.matchInfo.bestSetMatch}개 / 6개
+                    </p>
+                  </div>
+                </div>
+
+                {/* 세트별 적중 결과 */}
+                <div className="mt-4">
+                  <p className="text-sm text-gray-400 mb-2">세트별 적중 결과</p>
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {lottoData.matchInfo.setMatches.slice(0, 5).map((set) => (
+                      <div
+                        key={set.set}
+                        className={`flex items-center justify-between p-3 rounded-lg ${
+                          set.matched >= 4 ? 'bg-green-500/20' : set.matched >= 3 ? 'bg-yellow-500/20' : 'bg-white/5'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-500">{set.set}세트</span>
+                          <div className="flex gap-1">
+                            {set.numbers.map((num, idx) => (
+                              <span
+                                key={idx}
+                                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                                  set.matchedNumbers.includes(num)
+                                    ? 'bg-green-500 text-white'
+                                    : 'bg-white/10 text-gray-400'
+                                }`}
+                              >
+                                {num}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <span className={`font-bold ${
+                          set.matched >= 4 ? 'text-green-400' : set.matched >= 3 ? 'text-yellow-400' : 'text-gray-400'
+                        }`}>
+                          {set.matched}개 적중
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* 최근 당첨 번호 */}
             <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
@@ -588,77 +794,320 @@ export default function Home() {
         {/* 연금복권 결과 */}
         {!loadingState.isLoading && !error && tab === 'pension' && pensionData && (
           <div className="space-y-6">
-            {/* 회차 정보 */}
-            <div className="text-center mb-8">
-              <p className="text-gray-400">
-                다음 회차: <span className="text-white font-bold">{pensionData.nextRound}회</span>
-              </p>
-              <p className="text-sm text-gray-500">
-                최근 {pensionData.latestRound}회차까지 분석 완료
-              </p>
-            </div>
-
-            {/* 예측 결과 */}
-            <div className="space-y-4">
-              {pensionData.predictions.map((pred, idx) => (
-                <div
-                  key={idx}
-                  className={`
-                    p-6 rounded-2xl border backdrop-blur-sm card-hover
-                    ${idx === 0
-                      ? 'bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/30'
-                      : 'bg-white/5 border-white/10'
+            {/* 회차 선택기 */}
+            <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <span className="text-sm text-gray-400">특정 회차 조회:</span>
+                <input
+                  type="number"
+                  value={pensionRoundInput}
+                  onChange={(e) => setPensionRoundInput(e.target.value)}
+                  placeholder={`예: ${pensionData.latestRound - 10}`}
+                  className="w-28 px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-center focus:outline-none focus:border-purple-500"
+                />
+                <button
+                  onClick={() => {
+                    const round = parseInt(pensionRoundInput)
+                    if (round && round > 10 && round <= pensionData.latestRound) {
+                      fetchPensionData(round)
                     }
-                  `}
+                  }}
+                  disabled={!pensionRoundInput || loadingState.isLoading}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
                 >
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <span className={`
-                        px-3 py-1 rounded-full text-sm font-medium
-                        ${idx === 0 ? 'bg-purple-500/20 text-purple-400' : 'bg-white/10 text-gray-400'}
-                      `}>
-                        {idx === 0 ? '추천 1순위' : `추천 ${idx + 1}순위`}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-400">신뢰도</p>
-                      <p className={`text-2xl font-bold ${
-                        pred.confidence >= 70 ? 'text-green-400' :
-                        pred.confidence >= 50 ? 'text-yellow-400' : 'text-gray-400'
-                      }`}>
-                        {pred.confidence}%
-                      </p>
-                    </div>
-                  </div>
-
-                  <PensionNumber group={pred.group} numbers={pred.numbers} />
-
-                  {pred.reasons.length > 0 && (
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {pred.reasons.map((reason, i) => (
-                        <span key={i} className="px-2 py-1 bg-white/5 rounded text-xs text-gray-400">
-                          {reason}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
+                  조회
+                </button>
+                {selectedPensionRound && (
+                  <button
+                    onClick={() => {
+                      setPensionRoundInput('')
+                      fetchPensionData(null)
+                    }}
+                    className="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    최신으로
+                  </button>
+                )}
+              </div>
+              {selectedPensionRound && (
+                <p className="text-center text-xs text-purple-400 mt-2">
+                  {selectedPensionRound}회차 시점 예측 결과 조회 중
+                </p>
+              )}
             </div>
 
-            {/* 자릿수별 통계 */}
-            <div className="mt-8">
+            {/* 회차 정보 */}
+            <div className={`text-center p-6 rounded-2xl border ${
+              pensionData.isHistorical
+                ? 'bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/30'
+                : 'bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/30'
+            }`}>
+              <p className="text-sm text-gray-400 mb-1">
+                {pensionData.isHistorical ? '조회 회차' : '다음 추첨'}
+              </p>
+              <p className="text-3xl font-bold text-white mb-2">
+                제 {pensionData.nextRound}회
+              </p>
+              <p className="text-gray-400">
+                {pensionData.isHistorical
+                  ? `${pensionData.latestRound}회차까지 데이터로 예측`
+                  : `${pensionData.latestRound}회차까지 ${pensionData.totalResults || pensionData.latestRound}개 데이터 분석`}
+              </p>
+              <p className="text-xs text-purple-400 mt-2">
+                {pensionData.method || 'CDM 분석'}
+              </p>
+            </div>
+
+            {/* 실제 당첨번호 비교 (과거 회차 조회 시) */}
+            {pensionData.matchInfo && (
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/30">
+                <h2 className="text-xl font-bold mb-4 text-green-400">
+                  {pensionData.matchInfo.targetRound}회 실제 당첨번호 비교
+                </h2>
+                <div className="mb-4">
+                  <p className="text-sm text-gray-400 mb-2">실제 당첨번호 ({pensionData.matchInfo.actualDate})</p>
+                  <div className="flex items-center justify-center gap-2 flex-wrap">
+                    <span className="w-10 h-10 rounded-lg bg-amber-500/30 flex items-center justify-center font-bold text-amber-300">
+                      {pensionData.matchInfo.actualGroup}조
+                    </span>
+                    {pensionData.matchInfo.actualNumbers.map((num, idx) => (
+                      <span
+                        key={idx}
+                        className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500/30 to-pink-500/30 flex items-center justify-center text-lg font-bold text-white"
+                      >
+                        {num}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl bg-white/5 mb-4">
+                  <p className="text-sm text-gray-400 mb-2">뒤 6자리 최고 연속 적중</p>
+                  <p className="text-3xl font-bold text-yellow-400">
+                    {pensionData.matchInfo.bestConsecutiveMatch}자리 연속
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    (뒤에서부터 연속으로 맞춘 자릿수)
+                  </p>
+                </div>
+
+                {/* 세트별 적중 결과 */}
+                <div className="mt-4">
+                  <p className="text-sm text-gray-400 mb-2">세트별 적중 결과 (뒤 6자리 기준)</p>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {pensionData.matchInfo.setMatches.slice(0, 8).map((set) => (
+                      <div
+                        key={set.set}
+                        className={`p-3 rounded-lg ${
+                          set.consecutiveFromEnd >= 4 ? 'bg-green-500/20 border border-green-500/40' :
+                          set.consecutiveFromEnd >= 2 ? 'bg-yellow-500/20 border border-yellow-500/40' :
+                          'bg-white/5'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs text-gray-500">{set.set}세트 ({set.method})</span>
+                          <span className={`text-sm font-bold ${
+                            set.consecutiveFromEnd >= 4 ? 'text-green-400' :
+                            set.consecutiveFromEnd >= 2 ? 'text-yellow-400' :
+                            'text-gray-400'
+                          }`}>
+                            {set.prize}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-center gap-1">
+                          {set.numbers.map((num, idx) => (
+                            <span
+                              key={idx}
+                              className={`w-8 h-8 rounded flex items-center justify-center text-sm font-bold ${
+                                set.matchedPositions.includes(idx + 1)
+                                  ? 'bg-green-500 text-white'
+                                  : 'bg-white/10 text-gray-400'
+                              }`}
+                            >
+                              {num}
+                            </span>
+                          ))}
+                        </div>
+                        <p className="text-xs text-center text-gray-500 mt-1">
+                          {set.matchedDigits}자리 일치 (연속 {set.consecutiveFromEnd}자리)
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 최근 당첨 번호 */}
+            {pensionData.recentResults && pensionData.recentResults.length > 0 && (
+              <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                <h2 className="text-xl font-bold mb-4">최근 당첨 번호</h2>
+                <div className="space-y-3">
+                  {pensionData.recentResults.map((result) => (
+                    <div key={result.round} className="flex items-center gap-4 p-3 rounded-lg bg-white/5">
+                      <div className="w-24">
+                        <p className="font-bold text-white">{result.round}회</p>
+                        <p className="text-xs text-gray-500">{result.date}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-8 h-8 rounded bg-purple-500/30 flex items-center justify-center font-bold text-purple-300">
+                          {result.group}조
+                        </span>
+                        <div className="flex gap-1">
+                          {result.numbers.map((n, idx) => (
+                            <span
+                              key={idx}
+                              className="w-8 h-8 rounded bg-gradient-to-br from-pink-500/30 to-purple-500/30 flex items-center justify-center font-bold text-white"
+                            >
+                              {n}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* CDM 기반 TOP 3 예측 */}
+            <div className="p-6 rounded-2xl bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/30">
+              <h2 className="text-xl font-bold mb-2">CDM 기반 1등 예측 TOP 3</h2>
+              <p className="text-sm text-gray-400 mb-6">
+                논문(arXiv:2403.12836) 기반 순수 확률 예측
+              </p>
+
+              <div className="space-y-4">
+                {pensionData.predictions.map((pred, idx) => (
+                  <div
+                    key={idx}
+                    className={`
+                      p-5 rounded-xl border backdrop-blur-sm transition-all hover:scale-[1.01]
+                      ${idx === 0
+                        ? 'bg-gradient-to-r from-yellow-500/15 to-orange-500/15 border-yellow-500/40'
+                        : idx === 1
+                        ? 'bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/30'
+                        : 'bg-white/5 border-white/10'
+                      }
+                    `}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <span className={`
+                          w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
+                          ${idx === 0 ? 'bg-yellow-500/30 text-yellow-300' :
+                            idx === 1 ? 'bg-purple-500/30 text-purple-300' :
+                            'bg-white/10 text-gray-400'}
+                        `}>
+                          {idx + 1}
+                        </span>
+                        <span className="text-sm text-gray-400">{pred.reasons[0]}</span>
+                      </div>
+                      {pred.cdmScore && (
+                        <span className="text-sm font-mono text-green-400">
+                          CDM: {pred.cdmScore.toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+
+                    <PensionNumber numbers={pred.numbers} showGroup={false} />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 조별 CDM 분석 */}
+            {pensionData.groupStats && (
+              <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                <h3 className="font-bold text-lg mb-4">조(Group) CDM 분석</h3>
+                <div className="grid grid-cols-5 gap-2">
+                  {pensionData.groupStats.map((g) => (
+                    <div
+                      key={g.group}
+                      className={`p-3 rounded-lg text-center transition-all ${
+                        g.group === pensionData.groupStats![0].group
+                          ? 'bg-purple-500/20 border border-purple-500/40'
+                          : 'bg-white/5'
+                      }`}
+                    >
+                      <p className="text-2xl font-bold text-white">{g.group}조</p>
+                      <p className="text-xs text-gray-400">{g.frequency}회</p>
+                      <p className="text-sm text-purple-400 font-medium">{g.probability}%</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 자릿수별 CDM TOP3 */}
+            {pensionData.digitPredictions && (
+              <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                <h3 className="font-bold text-lg mb-4">자릿수별 CDM TOP3</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {pensionData.digitPredictions.map((pos) => (
+                    <div key={pos.position} className="p-4 rounded-xl bg-white/5">
+                      <p className="text-sm text-gray-400 mb-3">{pos.position}번째 자리</p>
+                      <div className="flex gap-2">
+                        {pos.top3.map((item, i) => (
+                          <div key={item.digit} className="text-center">
+                            <span className={`
+                              w-10 h-10 rounded-lg flex items-center justify-center text-lg font-bold mb-1
+                              ${i === 0 ? 'bg-yellow-500/30 text-yellow-300' :
+                                i === 1 ? 'bg-gray-500/30 text-gray-300' :
+                                'bg-orange-900/30 text-orange-300'}
+                            `}>
+                              {item.digit}
+                            </span>
+                            <p className="text-[10px] text-gray-500">{item.cdmScore}점</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 추천 15세트 */}
+            {pensionData.recommendedSets && pensionData.recommendedSets.length > 3 && (
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/30">
+                <h3 className="font-bold text-lg mb-2">CDM 추천 세트</h3>
+                <p className="text-sm text-gray-400 mb-4">
+                  다양한 CDM 전략 기반 조합
+                </p>
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {pensionData.recommendedSets.slice(3).map((set) => (
+                    <div
+                      key={set.set}
+                      className="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-gray-500 w-6">{set.set}.</span>
+                        <span className="font-mono text-white">{set.numbers.join('')}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-gray-500">{set.method}</span>
+                        <span className="text-sm text-green-400 font-medium">{set.score.toFixed(1)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 자릿수별 핫/콜드 번호 */}
+            <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
               <h3 className="font-bold text-lg mb-4">자릿수별 핫/콜드 번호</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {pensionData.hotByPosition.map((pos, idx) => (
-                  <div key={idx} className="p-4 rounded-xl bg-white/5 border border-white/10">
+                  <div key={idx} className="p-4 rounded-xl bg-white/5">
                     <p className="text-sm text-gray-400 mb-2">{pos.position}번째 자리</p>
-                    <div className="flex gap-2">
+                    <div className="flex gap-4">
                       <div>
                         <p className="text-xs text-red-400 mb-1">핫</p>
                         <div className="flex gap-1">
-                          {pos.hotNumbers.map((n) => (
-                            <span key={n} className="w-6 h-6 rounded bg-red-500/30 flex items-center justify-center text-xs font-bold">
+                          {pos.hotNumbers.map((n, i) => (
+                            <span key={`hot-${n}-${i}`} className="w-6 h-6 rounded bg-red-500/30 flex items-center justify-center text-xs font-bold">
                               {n}
                             </span>
                           ))}
@@ -667,8 +1116,8 @@ export default function Home() {
                       <div>
                         <p className="text-xs text-blue-400 mb-1">콜드</p>
                         <div className="flex gap-1">
-                          {pensionData.coldByPosition[idx]?.coldNumbers.map((n) => (
-                            <span key={n} className="w-6 h-6 rounded bg-blue-500/30 flex items-center justify-center text-xs font-bold">
+                          {pensionData.coldByPosition[idx]?.coldNumbers.map((n, i) => (
+                            <span key={`cold-${n}-${i}`} className="w-6 h-6 rounded bg-blue-500/30 flex items-center justify-center text-xs font-bold">
                               {n}
                             </span>
                           ))}
