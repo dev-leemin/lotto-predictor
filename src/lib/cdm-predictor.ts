@@ -232,7 +232,7 @@ export function analyzeLottoCDM(results: LottoResultData[]): CDMAnalysisResult {
   }
 }
 
-// CDM 기반 15개 추천 세트 생성
+// CDM 기반 15개 추천 세트 생성 (순수 확률 기반)
 function generateCDMSets(
   predictions: CDMPrediction[],
   results: LottoResultData[]
@@ -242,154 +242,151 @@ function generateCDMSets(
 
   const getCombinationKey = (nums: number[]) => [...nums].sort((a, b) => a - b).join(',')
 
-  // 조합 점수 계산
-  const calculateSetScore = (nums: number[]): number => {
+  // 순수 CDM 확률 점수만 계산 (휴리스틱 제외)
+  const calculatePureCDMScore = (nums: number[]): number => {
     let score = 0
-
-    // CDM 점수 합계
     nums.forEach(num => {
       const pred = predictions.find(p => p.number === num)
-      if (pred) score += pred.cdmScore * 100
+      if (pred) score += pred.cdmScore
     })
-
-    // 합계 적합성 (평균 138 근처)
-    const sum = nums.reduce((a, b) => a + b, 0)
-    if (sum >= 115 && sum <= 160) score += 20
-
-    // 홀짝 균형
-    const oddCount = nums.filter(n => n % 2 === 1).length
-    if (oddCount === 3) score += 15
-    else if (oddCount === 2 || oddCount === 4) score += 10
-
-    // 고저 균형
-    const lowCount = nums.filter(n => n <= 22).length
-    if (lowCount === 3) score += 10
-
-    return Math.round(score * 100) / 100
+    return Math.round(score * 10000) / 10000
   }
 
-  // 세트 생성 함수
-  const generateSet = (
-    candidates: CDMPrediction[],
-    constraints: { targetOdd?: number; mustInclude?: number[] } = {}
-  ): number[] | null => {
-    const { targetOdd = 3, mustInclude = [] } = constraints
-    const selected = [...mustInclude]
-    let oddCount = selected.filter(n => n % 2 === 1).length
-    let lowCount = selected.filter(n => n <= 22).length
+  // 조합의 결합 확률 계산 (CDM 논문 기반)
+  // P(조합) = Π(개별 확률) - 독립 가정 시 근사
+  const calculateJointProbability = (nums: number[]): number => {
+    let logProb = 0
+    nums.forEach(num => {
+      const pred = predictions.find(p => p.number === num)
+      if (pred && pred.bayesianPosterior > 0) {
+        logProb += Math.log(pred.bayesianPosterior)
+      }
+    })
+    return Math.exp(logProb)
+  }
+
+  // 1~6. 순수 CDM TOP 번호 조합 (상위 6~15번째까지 조합)
+  // 첫 번째: TOP 1~6
+  for (let startIdx = 0; startIdx < 6 && sets.length < 6; startIdx++) {
+    const candidates = predictions.slice(startIdx, startIdx + 10)
+    const selected: number[] = []
 
     for (const cand of candidates) {
       if (selected.length >= 6) break
-      if (selected.includes(cand.number)) continue
-
-      const isOdd = cand.number % 2 === 1
-      const isLow = cand.number <= 22
-
-      // 홀짝 균형
-      if (isOdd && oddCount >= targetOdd + 1) continue
-      if (!isOdd && oddCount < targetOdd && selected.length >= 6 - (targetOdd - oddCount)) continue
-
-      // 고저 균형
-      if (isLow && lowCount >= 4) continue
-      if (!isLow && lowCount <= 1 && selected.length >= 4) continue
-
       selected.push(cand.number)
-      if (isOdd) oddCount++
-      if (isLow) lowCount++
     }
 
-    if (selected.length < 6) return null
-
-    const key = getCombinationKey(selected)
-    if (usedCombinations.has(key)) return null
-
-    usedCombinations.add(key)
-    return selected.sort((a, b) => a - b)
-  }
-
-  // 1. 순수 CDM 최고점수 조합
-  const set1 = generateSet(predictions)
-  if (set1) {
-    sets.push({
-      set: 1,
-      numbers: set1,
-      score: calculateSetScore(set1),
-      method: 'CDM 최고확률',
-    })
-  }
-
-  // 2~4. 홀짝 변형 조합
-  for (let oddTarget = 2; oddTarget <= 4; oddTarget++) {
-    const nums = generateSet(predictions, { targetOdd: oddTarget })
-    if (nums) {
-      sets.push({
-        set: sets.length + 1,
-        numbers: nums,
-        score: calculateSetScore(nums),
-        method: `CDM 홀${oddTarget}짝${6 - oddTarget}`,
-      })
-    }
-  }
-
-  // 5~7. 출현예정 번호 포함 (consecutiveMiss 높은 순)
-  const overdueNumbers = [...predictions]
-    .sort((a, b) => b.consecutiveMiss - a.consecutiveMiss)
-    .slice(0, 10)
-
-  for (let i = 0; i < 3 && i < overdueNumbers.length; i++) {
-    const nums = generateSet(predictions, { mustInclude: [overdueNumbers[i].number] })
-    if (nums) {
-      sets.push({
-        set: sets.length + 1,
-        numbers: nums,
-        score: calculateSetScore(nums),
-        method: `출현예정 ${overdueNumbers[i].number}번 포함`,
-      })
-    }
-  }
-
-  // 8~10. 베이지안 사후확률 기반
-  const bayesianSorted = [...predictions].sort((a, b) => b.bayesianPosterior - a.bayesianPosterior)
-  for (let i = 0; i < 3; i++) {
-    const topBayesian = bayesianSorted.slice(i * 2, i * 2 + 2).map(p => p.number)
-    if (topBayesian.length >= 2) {
-      const nums = generateSet(predictions, { mustInclude: topBayesian })
-      if (nums) {
+    if (selected.length === 6) {
+      const sorted = selected.sort((a, b) => a - b)
+      const key = getCombinationKey(sorted)
+      if (!usedCombinations.has(key)) {
+        usedCombinations.add(key)
         sets.push({
           set: sets.length + 1,
-          numbers: nums,
-          score: calculateSetScore(nums),
-          method: `베이지안 상위 ${topBayesian.join(',')}`,
+          numbers: sorted,
+          score: calculatePureCDMScore(sorted),
+          method: startIdx === 0 ? 'CDM TOP6 최고확률' : `CDM TOP ${startIdx + 1}~${startIdx + 6}`,
         })
       }
     }
   }
 
-  // 11~15. 다양성 조합 (덜 사용된 번호 우선)
-  const usedNumbers = new Set<number>()
-  sets.forEach(s => s.numbers.forEach(n => usedNumbers.add(n)))
+  // 7~10. CDM 가중 랜덤 샘플링 (확률에 비례한 선택)
+  for (let variant = 0; variant < 4 && sets.length < 10; variant++) {
+    const selected: number[] = []
+    const available = [...predictions]
 
-  for (let i = 0; sets.length < 15 && i < 10; i++) {
-    const reorderedPredictions = [...predictions].sort((a, b) => {
-      const aUsed = usedNumbers.has(a.number) ? 1 : 0
-      const bUsed = usedNumbers.has(b.number) ? 1 : 0
-      if (aUsed !== bUsed) return aUsed - bUsed
-      return b.cdmScore - a.cdmScore
-    })
+    // 확률 가중 선택
+    while (selected.length < 6 && available.length > 0) {
+      // CDM 점수를 가중치로 사용
+      const totalWeight = available.reduce((sum, p) => sum + p.cdmScore, 0)
+      let random = Math.random() * totalWeight
 
-    const nums = generateSet(reorderedPredictions, { targetOdd: 2 + (i % 3) })
-    if (nums) {
-      sets.push({
-        set: sets.length + 1,
-        numbers: nums,
-        score: calculateSetScore(nums),
-        method: `CDM 다양성 #${sets.length - 9}`,
-      })
-      nums.forEach(n => usedNumbers.add(n))
+      for (let i = 0; i < available.length; i++) {
+        random -= available[i].cdmScore
+        if (random <= 0) {
+          selected.push(available[i].number)
+          available.splice(i, 1)
+          break
+        }
+      }
+    }
+
+    if (selected.length === 6) {
+      const sorted = selected.sort((a, b) => a - b)
+      const key = getCombinationKey(sorted)
+      if (!usedCombinations.has(key)) {
+        usedCombinations.add(key)
+        sets.push({
+          set: sets.length + 1,
+          numbers: sorted,
+          score: calculatePureCDMScore(sorted),
+          method: `CDM 확률가중 #${variant + 1}`,
+        })
+      }
     }
   }
 
-  // 점수 순 정렬
+  // 11~13. 베이지안 사후확률 TOP 조합
+  const bayesianSorted = [...predictions].sort((a, b) => b.bayesianPosterior - a.bayesianPosterior)
+  for (let startIdx = 0; startIdx < 3 && sets.length < 13; startIdx++) {
+    const selected = bayesianSorted.slice(startIdx * 2, startIdx * 2 + 6).map(p => p.number)
+
+    if (selected.length === 6) {
+      const sorted = selected.sort((a, b) => a - b)
+      const key = getCombinationKey(sorted)
+      if (!usedCombinations.has(key)) {
+        usedCombinations.add(key)
+        sets.push({
+          set: sets.length + 1,
+          numbers: sorted,
+          score: calculatePureCDMScore(sorted),
+          method: `베이지안 TOP ${startIdx * 2 + 1}~${startIdx * 2 + 6}`,
+        })
+      }
+    }
+  }
+
+  // 14~15. 최근 트렌드 반영 (최근 50회차 기준 CDM 재계산)
+  const recent50 = results.slice(-50)
+  const recentFreq: Map<number, number> = new Map()
+  for (let i = 1; i <= 45; i++) recentFreq.set(i, 0)
+
+  recent50.forEach(r => {
+    r.numbers.forEach(num => {
+      recentFreq.set(num, (recentFreq.get(num) || 0) + 1)
+    })
+  })
+
+  // 최근 빈도 기반 정렬
+  const recentSorted = [...predictions].sort((a, b) => {
+    const aRecent = recentFreq.get(a.number) || 0
+    const bRecent = recentFreq.get(b.number) || 0
+    // 최근 빈도와 CDM 점수 결합
+    const aScore = aRecent * 0.4 + a.cdmScore * 100 * 0.6
+    const bScore = bRecent * 0.4 + b.cdmScore * 100 * 0.6
+    return bScore - aScore
+  })
+
+  for (let variant = 0; variant < 2 && sets.length < 15; variant++) {
+    const selected = recentSorted.slice(variant * 2, variant * 2 + 6).map(p => p.number)
+
+    if (selected.length === 6) {
+      const sorted = selected.sort((a, b) => a - b)
+      const key = getCombinationKey(sorted)
+      if (!usedCombinations.has(key)) {
+        usedCombinations.add(key)
+        sets.push({
+          set: sets.length + 1,
+          numbers: sorted,
+          score: calculatePureCDMScore(sorted),
+          method: `최근트렌드+CDM #${variant + 1}`,
+        })
+      }
+    }
+  }
+
+  // CDM 점수 순 정렬 (순수 확률 기반)
   sets.sort((a, b) => b.score - a.score)
   return sets.slice(0, 15).map((s, idx) => ({ ...s, set: idx + 1 }))
 }
@@ -426,7 +423,7 @@ export interface PensionCDMResult {
   latestRound: number
 }
 
-// 연금복권 CDM 분석
+// 연금복권 CDM 분석 (순수 확률 기반)
 export function analyzePensionCDM(results: PensionResultData[]): PensionCDMResult {
   const n = results.length
 
@@ -434,7 +431,7 @@ export function analyzePensionCDM(results: PensionResultData[]): PensionCDMResul
     throw new Error('분석할 데이터가 없습니다.')
   }
 
-  // 1. 조 분석 (1~5)
+  // 1. 조 분석 (1~5) - CDM 모델 적용
   const groupFreq: number[] = [0, 0, 0, 0, 0, 0] // index 1~5 사용
   results.forEach(r => {
     if (r.group >= 1 && r.group <= 5) {
@@ -442,16 +439,18 @@ export function analyzePensionCDM(results: PensionResultData[]): PensionCDMResul
     }
   })
 
+  // CDM α 파라미터 추정 (적률법)
   const groupAlpha = groupFreq.slice(1).map(f => f / n)
   const groupTotalAlphaN = groupAlpha.reduce((a, b, i) => a + b + groupFreq[i + 1], 0)
 
   const groupPrediction = [1, 2, 3, 4, 5].map(g => ({
     group: g,
+    // CDM 공식: Pred(j) = M × (αⱼ + nⱼ) / Σ(αⱼ + nⱼ)
     score: 5 * (groupAlpha[g - 1] + groupFreq[g]) / groupTotalAlphaN,
     frequency: groupFreq[g],
   })).sort((a, b) => b.score - a.score)
 
-  // 2. 각 자릿수별 숫자 분석 (0~9)
+  // 2. 각 자릿수별 숫자 분석 (0~9) - CDM 모델 적용
   const digitPredictions: PensionCDMPrediction[][] = []
 
   for (let pos = 0; pos < 6; pos++) {
@@ -463,6 +462,7 @@ export function analyzePensionCDM(results: PensionResultData[]): PensionCDMResul
       }
     })
 
+    // CDM α 파라미터 추정
     const digitAlpha = digitFreq.map(f => f / n)
     const totalAlphaN = digitAlpha.reduce((a, b, i) => a + b + digitFreq[i], 0)
 
@@ -471,6 +471,7 @@ export function analyzePensionCDM(results: PensionResultData[]): PensionCDMResul
       predictions.push({
         position: pos + 1,
         digit,
+        // CDM 공식 적용
         cdmScore: 10 * (digitAlpha[digit] + digitFreq[digit]) / totalAlphaN,
         frequency: digitFreq[digit],
         bayesianPosterior: (digitAlpha[digit] + digitFreq[digit]) / totalAlphaN,
@@ -481,44 +482,114 @@ export function analyzePensionCDM(results: PensionResultData[]): PensionCDMResul
     digitPredictions.push(predictions)
   }
 
-  // 3. 추천 세트 생성 (15개)
+  // 3. 추천 세트 생성 (15개) - 순수 CDM 확률 기반
   const recommendedSets: Array<{
     set: number
     group: number
     numbers: number[]
     score: number
+    method?: string
   }> = []
 
   const usedCombinations = new Set<string>()
 
-  // 각 조별로 3세트씩
+  // 순수 CDM 점수 계산
+  const calculatePureCDMScore = (group: number, numbers: number[]): number => {
+    const gp = groupPrediction.find(g => g.group === group)
+    let score = gp ? gp.score : 0
+
+    numbers.forEach((digit, pos) => {
+      const pred = digitPredictions[pos].find(p => p.digit === digit)
+      if (pred) score += pred.cdmScore
+    })
+
+    return Math.round(score * 10000) / 10000
+  }
+
+  // 1~5. 각 자릿수 TOP1 조합 (조별)
   for (const gp of groupPrediction) {
-    for (let variant = 0; variant < 3 && recommendedSets.length < 15; variant++) {
-      const numbers: number[] = []
-      let totalScore = gp.score * 10
+    const numbers: number[] = []
+    for (let pos = 0; pos < 6; pos++) {
+      numbers.push(digitPredictions[pos][0].digit) // TOP1
+    }
 
-      for (let pos = 0; pos < 6; pos++) {
-        // 상위 3개 중에서 variant에 따라 선택
-        const idx = Math.min(variant, digitPredictions[pos].length - 1)
-        const selected = digitPredictions[pos][idx]
-        numbers.push(selected.digit)
-        totalScore += selected.cdmScore
-      }
-
-      const key = `${gp.group}-${numbers.join('')}`
-      if (!usedCombinations.has(key)) {
-        usedCombinations.add(key)
-        recommendedSets.push({
-          set: recommendedSets.length + 1,
-          group: gp.group,
-          numbers,
-          score: Math.round(totalScore * 100) / 100,
-        })
-      }
+    const key = `${gp.group}-${numbers.join('')}`
+    if (!usedCombinations.has(key)) {
+      usedCombinations.add(key)
+      recommendedSets.push({
+        set: recommendedSets.length + 1,
+        group: gp.group,
+        numbers,
+        score: calculatePureCDMScore(gp.group, numbers),
+        method: `CDM TOP1 (${gp.group}조)`,
+      })
     }
   }
 
-  // 점수순 정렬
+  // 6~10. CDM 가중 랜덤 샘플링
+  for (let variant = 0; variant < 5 && recommendedSets.length < 10; variant++) {
+    const group = groupPrediction[variant % 5].group
+    const numbers: number[] = []
+
+    for (let pos = 0; pos < 6; pos++) {
+      const available = [...digitPredictions[pos]]
+      const totalWeight = available.reduce((sum, p) => sum + p.cdmScore, 0)
+      let random = Math.random() * totalWeight
+
+      for (const pred of available) {
+        random -= pred.cdmScore
+        if (random <= 0) {
+          numbers.push(pred.digit)
+          break
+        }
+      }
+
+      if (numbers.length <= pos) {
+        numbers.push(available[0].digit)
+      }
+    }
+
+    const key = `${group}-${numbers.join('')}`
+    if (!usedCombinations.has(key)) {
+      usedCombinations.add(key)
+      recommendedSets.push({
+        set: recommendedSets.length + 1,
+        group,
+        numbers,
+        score: calculatePureCDMScore(group, numbers),
+        method: `CDM 확률가중 #${variant + 1}`,
+      })
+    }
+  }
+
+  // 11~15. 베이지안 사후확률 기반 조합
+  for (let variant = 0; variant < 5 && recommendedSets.length < 15; variant++) {
+    const group = groupPrediction[variant % 5].group
+    const numbers: number[] = []
+
+    for (let pos = 0; pos < 6; pos++) {
+      // 베이지안 사후확률 순 정렬 후 상위 선택
+      const bayesianSorted = [...digitPredictions[pos]].sort(
+        (a, b) => b.bayesianPosterior - a.bayesianPosterior
+      )
+      const idx = Math.min(variant, bayesianSorted.length - 1)
+      numbers.push(bayesianSorted[idx].digit)
+    }
+
+    const key = `${group}-${numbers.join('')}`
+    if (!usedCombinations.has(key)) {
+      usedCombinations.add(key)
+      recommendedSets.push({
+        set: recommendedSets.length + 1,
+        group,
+        numbers,
+        score: calculatePureCDMScore(group, numbers),
+        method: `베이지안 #${variant + 1}`,
+      })
+    }
+  }
+
+  // CDM 점수순 정렬
   recommendedSets.sort((a, b) => b.score - a.score)
   recommendedSets.forEach((s, idx) => {
     s.set = idx + 1
