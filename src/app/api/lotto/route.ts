@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import { analyzeLottoCDM, LottoResultData } from '@/lib/cdm-predictor'
+import { updateLottoDB } from '@/lib/lottery-fetcher'
 
 const prisma = new PrismaClient()
 
 // 캐시 (서버 메모리) - 1시간 캐시
 let cachedResponse: Record<string, unknown> | null = null
 let lastFetchTime = 0
+let lastUpdateCheck = 0
 const CACHE_DURATION = 1000 * 60 * 60 // 1시간
+const UPDATE_CHECK_INTERVAL = 1000 * 60 * 60 // 1시간마다 업데이트 체크
 
 // GET /api/lotto?round=1200 (특정 회차) 또는 GET /api/lotto (최신)
 export async function GET(request: NextRequest) {
@@ -18,6 +21,23 @@ export async function GET(request: NextRequest) {
 
     // 특정 회차 조회 시 캐시 사용 안함
     const useCache = !targetRound
+
+    // 1시간마다 최신 데이터 업데이트 체크 (최신 조회 시에만)
+    if (useCache && now - lastUpdateCheck > UPDATE_CHECK_INTERVAL) {
+      console.log('Checking for lotto updates...')
+      try {
+        const updateResult = await updateLottoDB()
+        if (updateResult.updated > 0) {
+          console.log(`Lotto: ${updateResult.updated} new rounds added (latest: ${updateResult.latest})`)
+          // 캐시 무효화
+          cachedResponse = null
+          lastFetchTime = 0
+        }
+      } catch (updateError) {
+        console.error('Lotto update check failed:', updateError)
+      }
+      lastUpdateCheck = now
+    }
 
     // 캐시된 데이터가 있고 1시간 이내면 재사용 (최신 조회 시에만)
     if (useCache && cachedResponse && now - lastFetchTime < CACHE_DURATION) {
