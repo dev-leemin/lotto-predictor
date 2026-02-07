@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import { analyzeLottoCDM, LottoResultData } from '@/lib/cdm-predictor'
 import { updateLottoDB } from '@/lib/lottery-fetcher'
+import { generateBacktestSets, getConsensusNumbers } from '@/lib/backtest-recommender'
 
 const prisma = new PrismaClient()
 
@@ -87,6 +88,10 @@ export async function GET(request: NextRequest) {
     // CDM 논문 기반 분석 실행
     const analysis = analyzeLottoCDM(results)
 
+    // 백테스트 기반 추천 생성
+    const backtestSets = generateBacktestSets(results)
+    const consensusNumbers = getConsensusNumbers(results)
+
     // 요일 변환 함수
     const getDayOfWeek = (dateString: string): string => {
       const days = ['일', '월', '화', '수', '목', '금', '토']
@@ -157,6 +162,9 @@ export async function GET(request: NextRequest) {
       matchInfo,
       isHistorical: !!targetRound,
       lastUpdate: new Date().toISOString(),
+      // 백테스트 기반 추천 (별도 섹션)
+      backtestSets,
+      consensusNumbers: consensusNumbers.slice(0, 10),
     }
 
     // 최신 조회 시에만 캐시 저장

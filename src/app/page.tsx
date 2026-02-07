@@ -34,6 +34,20 @@ interface RecommendedSet {
   method?: string
 }
 
+interface BacktestSet {
+  set: number
+  numbers: number[]
+  score: number
+  method: string
+  hitRate: number
+  recentHitRate: number
+}
+
+interface ConsensusNumber {
+  number: number
+  count: number
+}
+
 interface LottoMatchInfo {
   targetRound: number
   actualNumbers: number[]
@@ -70,6 +84,8 @@ interface LottoFullAnalysis {
   lastUpdate: string
   matchInfo?: LottoMatchInfo
   isHistorical?: boolean
+  backtestSets?: BacktestSet[]
+  consensusNumbers?: ConsensusNumber[]
 }
 
 interface PensionAnalysis {
@@ -788,6 +804,84 @@ export default function Home() {
                 <p className="text-xl font-bold text-white">{lottoData.patterns.consecutivePairsPercent}%</p>
               </div>
             </div>
+
+            {/* 백테스트 기반 추천 10세트 */}
+            {lottoData.backtestSets && lottoData.backtestSets.length > 0 && (
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/30">
+                <h2 className="text-xl font-bold mb-2">백테스트 검증 추천 10세트</h2>
+                <p className="text-sm text-gray-400 mb-4">
+                  {lottoData.totalRounds}회차 전체를 역추적 검증하여 실제로 2~3개씩 맞춘 공식들입니다
+                </p>
+
+                {/* 컨센서스 번호 */}
+                {lottoData.consensusNumbers && lottoData.consensusNumbers.length > 0 && (
+                  <div className="mb-6 p-4 rounded-xl bg-white/5 border border-white/10">
+                    <p className="text-xs text-gray-400 mb-3">20개 공식 중 다수가 선택한 핵심 번호</p>
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {lottoData.consensusNumbers.slice(0, 6).map((item, idx) => (
+                        <div key={idx} className="flex flex-col items-center">
+                          <span
+                            className={`w-11 h-11 rounded-full bg-gradient-to-br ${getBallColor(item.number)} flex items-center justify-center text-base font-bold text-white shadow-lg ring-2 ring-yellow-400/50`}
+                          >
+                            {item.number}
+                          </span>
+                          <span className="text-xs text-yellow-400 mt-1">{item.count}회</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  {lottoData.backtestSets.map((set) => (
+                    <div
+                      key={set.set}
+                      className={`p-4 rounded-xl border transition-all ${
+                        set.set <= 3
+                          ? 'bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-blue-500/30'
+                          : 'bg-white/5 border-white/10'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-sm font-bold px-2 py-0.5 rounded ${
+                            set.set <= 3 ? 'bg-blue-500/30 text-blue-300' : 'bg-white/10 text-gray-400'
+                          }`}>
+                            {set.set}순위
+                          </span>
+                          <span className="text-xs text-gray-500">{set.method}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs text-gray-500">
+                            전체 {set.hitRate}% / 최근 {set.recentHitRate}%
+                          </span>
+                          <span className={`text-sm font-bold ${
+                            set.score >= 30 ? 'text-blue-400' : set.score >= 20 ? 'text-cyan-400' : 'text-gray-400'
+                          }`}>
+                            {set.score.toFixed(1)}점
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 justify-center">
+                        {set.numbers.map((num, idx) => (
+                          <span
+                            key={idx}
+                            className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br ${getBallColor(num)} flex items-center justify-center text-sm sm:text-base font-bold text-white shadow-lg`}
+                          >
+                            {num}
+                          </span>
+                        ))}
+                      </div>
+
+                      <p className="text-center text-xs text-gray-500 mt-2">
+                        합계: {set.numbers.reduce((a, b) => a + b, 0)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
