@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { LottoBalls } from '@/components/LottoBall'
 import { PensionNumber } from '@/components/PensionNumber'
+import AdBanner from '@/components/AdBanner'
 
 type Tab = 'lotto' | 'pension'
 
@@ -190,6 +191,70 @@ export default function Home() {
   const [selectedPensionRound, setSelectedPensionRound] = useState<number | null>(null)
   const [lottoRoundInput, setLottoRoundInput] = useState<string>('')
   const [pensionRoundInput, setPensionRoundInput] = useState<string>('')
+
+  // 스마트 랜덤 생성기
+  const [randomSets, setRandomSets] = useState<number[][]>([])
+  const [isRolling, setIsRolling] = useState(false)
+
+  const generateSmartRandom = useCallback(() => {
+    setIsRolling(true)
+
+    const getBand = (n: number) => {
+      if (n <= 9) return 0
+      if (n <= 19) return 1
+      if (n <= 29) return 2
+      if (n <= 39) return 3
+      return 4
+    }
+
+    const isValid = (nums: number[]): boolean => {
+      const sorted = [...nums].sort((a, b) => a - b)
+      // 홀짝 비율 2:4 ~ 4:2
+      const oddCount = sorted.filter(n => n % 2 === 1).length
+      if (oddCount < 2 || oddCount > 4) return false
+      // 고저 비율 2:4 ~ 4:2
+      const lowCount = sorted.filter(n => n <= 22).length
+      if (lowCount < 2 || lowCount > 4) return false
+      // 합계 100~180
+      const sum = sorted.reduce((a, b) => a + b, 0)
+      if (sum < 100 || sum > 180) return false
+      // 최소 3개 번호대
+      const bands = new Set(sorted.map(getBand))
+      if (bands.size < 3) return false
+      // 연번 최대 1쌍
+      let consecutivePairs = 0
+      for (let i = 0; i < sorted.length - 1; i++) {
+        if (sorted[i + 1] - sorted[i] === 1) consecutivePairs++
+      }
+      if (consecutivePairs > 1) return false
+      return true
+    }
+
+    const generateOne = (): number[] => {
+      for (let attempt = 0; attempt < 1000; attempt++) {
+        const pool = Array.from({ length: 45 }, (_, i) => i + 1)
+        const picked: number[] = []
+        for (let i = 0; i < 6; i++) {
+          const idx = Math.floor(Math.random() * pool.length)
+          picked.push(pool[idx])
+          pool.splice(idx, 1)
+        }
+        if (isValid(picked)) return picked.sort((a, b) => a - b)
+      }
+      // fallback
+      return [3, 11, 22, 28, 35, 43]
+    }
+
+    // 애니메이션 지연
+    setTimeout(() => {
+      const sets: number[][] = []
+      for (let i = 0; i < 5; i++) {
+        sets.push(generateOne())
+      }
+      setRandomSets(sets)
+      setIsRolling(false)
+    }, 600)
+  }, [])
 
   // 경과 시간 업데이트
   useEffect(() => {
@@ -561,6 +626,64 @@ export default function Home() {
               </p>
             </div>
 
+            {/* 스마트 랜덤 생성기 */}
+            <div className="p-6 rounded-2xl bg-gradient-to-br from-orange-500/10 to-yellow-500/10 border border-orange-500/30">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-xl font-bold">스마트 랜덤 번호 뽑기</h2>
+                <span className="text-xs text-gray-500 bg-white/10 px-2 py-1 rounded">5,000원</span>
+              </div>
+              <p className="text-sm text-gray-400 mb-5">
+                홀짝, 고저, 합계, 번호대 균형을 맞춘 랜덤 번호 5게임
+              </p>
+
+              <div className="flex justify-center mb-5">
+                <button
+                  onClick={generateSmartRandom}
+                  disabled={isRolling}
+                  className="px-8 py-3 bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 rounded-xl text-base font-bold text-white shadow-lg transition-all disabled:opacity-50 active:scale-95"
+                >
+                  {isRolling ? (
+                    <span className="flex items-center gap-2">
+                      <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      뽑는 중...
+                    </span>
+                  ) : randomSets.length > 0 ? '다시 뽑기' : '번호 뽑기'}
+                </button>
+              </div>
+
+              {randomSets.length > 0 && (
+                <div className="space-y-3">
+                  {randomSets.map((set, gameIdx) => (
+                    <div
+                      key={gameIdx}
+                      className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10"
+                    >
+                      <span className="text-sm font-bold text-orange-400 w-6">{String.fromCharCode(65 + gameIdx)}</span>
+                      <div className="flex gap-2 flex-wrap justify-center flex-1">
+                        {set.map((num, idx) => (
+                          <span
+                            key={idx}
+                            className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br ${getBallColor(num)} flex items-center justify-center text-sm sm:text-base font-bold text-white shadow-lg`}
+                          >
+                            {num}
+                          </span>
+                        ))}
+                      </div>
+                      <span className="text-xs text-gray-500 w-12 text-right">
+                        {set.reduce((a, b) => a + b, 0)}
+                      </span>
+                    </div>
+                  ))}
+                  <p className="text-center text-xs text-gray-600 mt-2">
+                    홀짝 2:4~4:2 / 고저 2:4~4:2 / 합계 100~180 / 3개+ 번호대
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* 광고 슬롯 1 */}
+            <AdBanner slot="after-random" />
+
             {/* 실제 당첨번호 비교 (과거 회차 조회 시) */}
             {lottoData.matchInfo && (
               <div className="p-6 rounded-2xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/30">
@@ -785,6 +908,9 @@ export default function Home() {
               </div>
             </div>
 
+            {/* 광고 슬롯 2 */}
+            <AdBanner slot="after-recommended" />
+
             {/* 패턴 분석 */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-center">
@@ -882,6 +1008,9 @@ export default function Home() {
                 </div>
               </div>
             )}
+
+            {/* 광고 슬롯 3 */}
+            <AdBanner slot="page-bottom" />
           </div>
         )}
 
