@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import prisma from '@/lib/prisma'
 import { analyzePensionCDM, PensionResultData } from '@/lib/cdm-predictor'
 import { updatePensionDB } from '@/lib/lottery-fetcher'
-
-const prisma = new PrismaClient()
 
 // 캐시 (서버 메모리)
 let cachedAnalysis: ReturnType<typeof analyzePensionCDM> | null = null
@@ -18,18 +16,24 @@ export async function GET(request: NextRequest) {
   try {
     const now = Date.now()
     const searchParams = request.nextUrl.searchParams
-    const targetRound = searchParams.get('round') ? parseInt(searchParams.get('round')!) : null
+    const roundParam = searchParams.get('round')
+    const targetRound = roundParam ? parseInt(roundParam) : null
+
+    if (roundParam && (isNaN(targetRound!) || targetRound! < 1 || targetRound! > 10000)) {
+      return NextResponse.json(
+        { error: '유효한 회차를 입력해주세요.' },
+        { status: 400 }
+      )
+    }
 
     // 특정 회차 조회 시 캐시 사용 안함
     const useCache = !targetRound
 
     // 1시간마다 최신 데이터 업데이트 체크 (최신 조회 시에만)
     if (useCache && now - lastUpdateCheck > UPDATE_CHECK_INTERVAL) {
-      console.log('Checking for pension lottery updates...')
       try {
         const updateResult = await updatePensionDB()
         if (updateResult.updated > 0) {
-          console.log(`Pension: ${updateResult.updated} new rounds added (latest: ${updateResult.latest})`)
           // 캐시 무효화
           cachedAnalysis = null
           lastFetchTime = 0
@@ -166,8 +170,6 @@ export async function GET(request: NextRequest) {
       { error: '분석 중 오류가 발생했습니다.' },
       { status: 500 }
     )
-  } finally {
-    await prisma.$disconnect()
   }
 }
 

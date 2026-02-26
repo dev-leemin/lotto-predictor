@@ -1447,14 +1447,28 @@ export default function Home() {
         )}
       </main>
 
-      {/* 면책 조항 */}
+      {/* 책임감 있는 게임 안내 */}
+      <div className="max-w-4xl mx-auto px-4 mt-8">
+        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-center">
+          <p className="text-sm font-bold text-red-400 mb-2">책임감 있는 게임</p>
+          <p className="text-xs text-gray-400">
+            로또는 완전히 무작위 추첨이며, 과거 데이터는 미래 결과를 보장하지 않습니다.
+            <br />
+            본 서비스는 통계 분석 도구이며 당첨을 보장하지 않습니다. 18세 미만 이용 불가.
+          </p>
+          <p className="text-xs text-yellow-400 mt-2">
+            도박 중독 상담: 1336 (한국도박문제관리센터) | 정신건강 위기상담: 1577-0199
+          </p>
+        </div>
+      </div>
+
+      {/* 푸터 */}
       <footer className="max-w-4xl mx-auto px-4 py-8 text-center">
-        <p className="text-xs text-gray-500">
-          본 서비스는 과거 데이터를 기반으로 한 통계적 분석입니다.
-          <br />
-          실제 당첨을 보장하지 않으며, 도박 중독에 주의하세요.
-        </p>
-        <p className="text-xs text-gray-600 mt-2">
+        <div className="flex justify-center gap-4 mb-3">
+          <a href="/privacy-policy" className="text-xs text-gray-500 hover:text-gray-300 underline">개인정보처리방침</a>
+          <a href="/terms" className="text-xs text-gray-500 hover:text-gray-300 underline">이용약관</a>
+        </div>
+        <p className="text-xs text-gray-600">
           마지막 업데이트: {lottoData?.lastUpdate || pensionData?.lastUpdate
             ? new Date(lottoData?.lastUpdate || pensionData?.lastUpdate || '').toLocaleString('ko-KR')
             : '-'}

@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import prisma from '@/lib/prisma'
 import { analyzeLottoCDM, LottoResultData } from '@/lib/cdm-predictor'
 import { updateLottoDB } from '@/lib/lottery-fetcher'
 import { generateBacktestSets, getConsensusNumbers } from '@/lib/backtest-recommender'
-
-const prisma = new PrismaClient()
 
 // 캐시 (서버 메모리) - 1시간 캐시
 let cachedResponse: Record<string, unknown> | null = null
@@ -18,24 +16,30 @@ export async function GET(request: NextRequest) {
   try {
     const now = Date.now()
     const searchParams = request.nextUrl.searchParams
-    const targetRound = searchParams.get('round') ? parseInt(searchParams.get('round')!) : null
+    const roundParam = searchParams.get('round')
+    const targetRound = roundParam ? parseInt(roundParam, 10) : null
+
+    // 입력값 검증
+    if (roundParam && (isNaN(targetRound!) || targetRound! < 1 || targetRound! > 10000)) {
+      return NextResponse.json(
+        { error: '유효하지 않은 회차 번호입니다.' },
+        { status: 400 }
+      )
+    }
 
     // 특정 회차 조회 시 캐시 사용 안함
     const useCache = !targetRound
 
     // 1시간마다 최신 데이터 업데이트 체크 (최신 조회 시에만)
     if (useCache && now - lastUpdateCheck > UPDATE_CHECK_INTERVAL) {
-      console.log('Checking for lotto updates...')
       try {
         const updateResult = await updateLottoDB()
         if (updateResult.updated > 0) {
-          console.log(`Lotto: ${updateResult.updated} new rounds added (latest: ${updateResult.latest})`)
-          // 캐시 무효화
           cachedResponse = null
           lastFetchTime = 0
         }
-      } catch (updateError) {
-        console.error('Lotto update check failed:', updateError)
+      } catch {
+        // 업데이트 실패 시 무시하고 기존 데이터 사용
       }
       lastUpdateCheck = now
     }
@@ -49,7 +53,6 @@ export async function GET(request: NextRequest) {
     }
 
     // DB에서 로또 데이터 조회
-    // targetRound가 있으면 해당 회차 직전까지만, 없으면 전체
     const whereClause = targetRound ? { round: { lt: targetRound } } : {}
     const dbResults = await prisma.lottoResult.findMany({
       where: whereClause,
@@ -65,7 +68,7 @@ export async function GET(request: NextRequest) {
 
     if (dbResults.length < 10) {
       return NextResponse.json(
-        { error: `데이터가 충분하지 않습니다. (최소 10회차 필요, 현재 ${dbResults.length}회차)` },
+        { error: '데이터가 충분하지 않습니다.' },
         { status: 400 }
       )
     }
@@ -119,11 +122,9 @@ export async function GET(request: NextRequest) {
         actualResult.num4, actualResult.num5, actualResult.num6
       ].sort((a, b) => a - b)
 
-      // TOP 15 번호 중 맞춘 개수
       const top15Numbers = analysis.rankedNumbers.slice(0, 15).map(r => r.number)
       const matchedInTop15 = actualNumbers.filter(n => top15Numbers.includes(n))
 
-      // 추천 세트별 맞춘 개수
       const setMatches = analysis.recommendedSets.map(set => ({
         set: set.set,
         method: set.method,
@@ -162,7 +163,6 @@ export async function GET(request: NextRequest) {
       matchInfo,
       isHistorical: !!targetRound,
       lastUpdate: new Date().toISOString(),
-      // 백테스트 기반 추천 (별도 섹션)
       backtestSets,
       consensusNumbers: consensusNumbers.slice(0, 10),
     }
@@ -180,15 +180,13 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Lotto API error:', error)
     return NextResponse.json(
-      { error: '분석 중 오류가 발생했습니다.', details: String(error) },
+      { error: '분석 중 오류가 발생했습니다.' },
       { status: 500 }
     )
-  } finally {
-    await prisma.$disconnect()
   }
 }
 
-// DB 동기화 API - 새로운 회차 데이터 추가
+// DB 상태 확인 API
 export async function POST() {
   try {
     const count = await prisma.lottoResult.count()
@@ -202,9 +200,9 @@ export async function POST() {
       latestDate: latest?.date || '',
       cacheStatus: cachedResponse ? 'ready' : 'empty',
     })
-  } catch (error) {
+  } catch {
     return NextResponse.json(
-      { error: 'DB 조회 오류', details: String(error) },
+      { error: 'DB 조회 오류' },
       { status: 500 }
     )
   }

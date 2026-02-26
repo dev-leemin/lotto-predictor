@@ -6,9 +6,7 @@
  * - 연금복권: https://www.dhlottery.co.kr/pt720/selectPstPt720Info.do
  */
 
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import prisma from '@/lib/prisma'
 
 interface LottoAPIResult {
   ltEpsd: number        // 회차
@@ -223,8 +221,6 @@ export async function updatePensionDB(): Promise<{ updated: number; latest: numb
 export async function updateAllLotteryDB() {
   const lotto = await updateLottoDB()
   const pension = await updatePensionDB()
-
-  await prisma.$disconnect()
 
   return { lotto, pension }
 }

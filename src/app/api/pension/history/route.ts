@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import prisma from '@/lib/prisma'
 import { analyzePensionCDM, PensionResultData } from '@/lib/cdm-predictor'
-
-const prisma = new PrismaClient()
 
 // 특정 회차 기준 연금복권 CDM 예측 조회
 // GET /api/pension/history?round=290
@@ -11,7 +9,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const targetRound = parseInt(searchParams.get('round') || '0')
 
-    if (!targetRound || targetRound < 1) {
+    if (!targetRound || targetRound < 1 || targetRound > 10000) {
       return NextResponse.json(
         { error: '유효한 회차를 입력해주세요. (예: ?round=290)' },
         { status: 400 }
@@ -120,11 +118,9 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Pension history API error:', error)
     return NextResponse.json(
-      { error: '조회 중 오류가 발생했습니다.', details: String(error) },
+      { error: '조회 중 오류가 발생했습니다.' },
       { status: 500 }
     )
-  } finally {
-    await prisma.$disconnect()
   }
 }
 
