@@ -192,9 +192,13 @@ export default function Home() {
   const [lottoRoundInput, setLottoRoundInput] = useState<string>('')
   const [pensionRoundInput, setPensionRoundInput] = useState<string>('')
 
-  // 스마트 랜덤 생성기
+  // 스마트 랜덤 생성기 (로또)
   const [randomSets, setRandomSets] = useState<number[][]>([])
   const [isRolling, setIsRolling] = useState(false)
+
+  // 스마트 랜덤 생성기 (연금복권)
+  const [pensionRandomSets, setPensionRandomSets] = useState<Array<{ group: number; numbers: number[] }>>([])
+  const [isPensionRolling, setIsPensionRolling] = useState(false)
 
   const generateSmartRandom = useCallback(() => {
     setIsRolling(true)
@@ -253,6 +257,33 @@ export default function Home() {
       }
       setRandomSets(sets)
       setIsRolling(false)
+    }, 600)
+  }, [])
+
+  const generatePensionRandom = useCallback(() => {
+    setIsPensionRolling(true)
+
+    const generateOne = (): { group: number; numbers: number[] } => {
+      const group = Math.floor(Math.random() * 5) + 1
+      const numbers: number[] = []
+      for (let i = 0; i < 6; i++) {
+        numbers.push(Math.floor(Math.random() * 10))
+      }
+      // 6자리 전부 같은 숫자 방지
+      const unique = new Set(numbers)
+      if (unique.size === 1) {
+        numbers[Math.floor(Math.random() * 6)] = (numbers[0] + 1 + Math.floor(Math.random() * 9)) % 10
+      }
+      return { group, numbers }
+    }
+
+    setTimeout(() => {
+      const sets: Array<{ group: number; numbers: number[] }> = []
+      for (let i = 0; i < 5; i++) {
+        sets.push(generateOne())
+      }
+      setPensionRandomSets(sets)
+      setIsPensionRolling(false)
     }, 600)
   }, [])
 
@@ -1081,6 +1112,61 @@ export default function Home() {
               </p>
             </div>
 
+            {/* 연금복권 스마트 랜덤 생성기 */}
+            <div className="p-6 rounded-2xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/30">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-xl font-bold">랜덤 번호 뽑기</h2>
+                <span className="text-xs text-gray-500 bg-white/10 px-2 py-1 rounded">5,000원</span>
+              </div>
+              <p className="text-sm text-gray-400 mb-5">
+                조(1~5) + 6자리 숫자 랜덤 생성 5게임
+              </p>
+
+              <div className="flex justify-center mb-5">
+                <button
+                  onClick={generatePensionRandom}
+                  disabled={isPensionRolling}
+                  className="px-8 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-xl text-base font-bold text-white shadow-lg transition-all disabled:opacity-50 active:scale-95"
+                >
+                  {isPensionRolling ? (
+                    <span className="flex items-center gap-2">
+                      <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      뽑는 중...
+                    </span>
+                  ) : pensionRandomSets.length > 0 ? '다시 뽑기' : '번호 뽑기'}
+                </button>
+              </div>
+
+              {pensionRandomSets.length > 0 && (
+                <div className="space-y-3">
+                  {pensionRandomSets.map((set, gameIdx) => (
+                    <div
+                      key={gameIdx}
+                      className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10"
+                    >
+                      <span className="text-sm font-bold text-purple-400 w-6">{String.fromCharCode(65 + gameIdx)}</span>
+                      <div className="flex items-center gap-2 flex-1 justify-center">
+                        <span className="w-10 h-10 rounded-lg bg-amber-500/30 flex items-center justify-center font-bold text-amber-300">
+                          {set.group}조
+                        </span>
+                        {set.numbers.map((num, idx) => (
+                          <span
+                            key={idx}
+                            className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500/30 to-pink-500/30 flex items-center justify-center text-lg font-bold text-white"
+                          >
+                            {num}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 광고 슬롯 */}
+            <AdBanner slot="pension-after-random" />
+
             {/* 실제 당첨번호 비교 (과거 회차 조회 시) */}
             {pensionData.matchInfo && (
               <div className="p-6 rounded-2xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/30">
@@ -1318,6 +1404,9 @@ export default function Home() {
               </div>
             )}
 
+            {/* 광고 슬롯 */}
+            <AdBanner slot="pension-mid" />
+
             {/* 자릿수별 핫/콜드 번호 */}
             <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
               <h3 className="font-bold text-lg mb-4">자릿수별 핫/콜드 번호</h3>
@@ -1351,6 +1440,9 @@ export default function Home() {
                 ))}
               </div>
             </div>
+
+            {/* 광고 슬롯 */}
+            <AdBanner slot="pension-bottom" />
           </div>
         )}
       </main>
