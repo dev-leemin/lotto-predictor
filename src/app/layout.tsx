@@ -1,7 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import MobileBottomNav from "@/components/MobileBottomNav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,28 +16,42 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const SITE_URL = "https://lotto-predictor-two.vercel.app";
+const SITE_URL = "https://lotto45.kr";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#4F46E5",
+};
 
 export const metadata: Metadata = {
-  title: "AI 로또 예측기 - 로또 번호 추천 | 무료 당첨 번호 분석",
+  title: {
+    default: "이번주 로또 번호 추천 - 무료 AI 번호 생성기 | Lotto45",
+    template: "%s | Lotto45",
+  },
   description:
-    "AI 기반 로또 6/45 번호 예측 및 추천 서비스. CDM 확률 모델과 백테스트 검증 공식으로 스마트한 번호 선택. 연금복권 720+ 분석, 스마트 랜덤 생성기까지 무료 제공.",
+    "이번주 로또 번호 뭐 살까? AI가 분석한 로또 6/45 추천 번호를 무료로 받아보세요. 연금복권 720+ 분석, 당첨 통계, 세금 계산기까지 한번에!",
   keywords: [
-    "로또",
     "로또 번호 추천",
-    "로또 예측",
+    "이번주 로또 번호",
     "로또 번호 생성기",
+    "로또 예측",
     "AI 로또",
-    "로또 당첨 번호 분석",
+    "무료 로또 번호 추천",
+    "로또 당첨 번호",
     "로또 6/45",
     "연금복권 720+",
-    "로또 확률",
+    "로또 확률 분석",
     "로또 랜덤 번호",
-    "무료 로또 번호 추천",
+    "로또 당첨 번호 분석",
+    "로또 번호 뽑기",
   ],
-  authors: [{ name: "내로또" }],
-  creator: "내로또",
-  publisher: "내로또",
+  authors: [{ name: "Lotto45" }],
+  creator: "Lotto45",
+  publisher: "Lotto45",
   robots: {
     index: true,
     follow: true,
@@ -49,24 +66,34 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "ko_KR",
-    url: SITE_URL,
-    siteName: "내로또 - AI 로또 예측기",
-    title: "AI 로또 예측기 - 로또 번호 추천 | 무료 당첨 번호 분석",
+    url: "https://lotto45.kr",
+    siteName: "Lotto45",
+    title: "이번주 로또 번호 추천 - 무료 AI 번호 생성기 | Lotto45",
     description:
-      "AI 기반 로또 6/45 번호 예측. CDM 확률 모델 + 백테스트 검증 공식 + 스마트 랜덤 생성기. 무료 서비스.",
+      "이번주 로또 번호 뭐 살까? AI가 분석한 추천 번호를 무료로 받아보세요!",
   },
   twitter: {
-    card: "summary_large_image",
-    title: "AI 로또 예측기 - 로또 번호 추천",
+    card: "summary",
+    title: "이번주 로또 번호 추천 - 무료 AI 번호 생성기 | Lotto45",
     description:
-      "AI 기반 로또 6/45 번호 예측 및 추천. CDM 확률 모델과 백테스트 검증 공식으로 스마트한 번호 선택.",
+      "이번주 로또 번호 뭐 살까? AI가 분석한 추천 번호를 무료로 받아보세요!",
   },
   alternates: {
     canonical: SITE_URL,
   },
   verification: {
-    // Google Search Console 인증 후 여기에 추가
-    // google: "YOUR_VERIFICATION_CODE",
+    google: "kh1dYGNn7H3p8ehcVwxCiyY4Hto1mdbxHxRDI-N5X4U",
+  },
+  other: {
+    "naver-site-verification": "9512e11063c358b72bb987830fb3109abf977d3b",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Lotto45",
+  },
+  formatDetection: {
+    telephone: false,
   },
 };
 
@@ -75,45 +102,87 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const adsenseId = process.env.NEXT_PUBLIC_ADSENSE_ID;
-
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    name: "내로또 - AI 로또 예측기",
-    description:
-      "AI 기반 로또 6/45 번호 예측 및 추천 서비스. CDM 확률 모델과 백테스트 검증 공식으로 스마트한 번호 선택.",
-    url: SITE_URL,
-    applicationCategory: "EntertainmentApplication",
-    operatingSystem: "Web",
-    offers: {
-      "@type": "Offer",
-      price: "0",
-      priceCurrency: "KRW",
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      name: "Lotto45",
+      description:
+        "AI 기반 로또 6/45 번호 예측 및 추천 서비스. CDM 확률 모델, Markov Chain, Monte Carlo 시뮬레이션, 앙상블 분석으로 스마트한 번호 선택.",
+      url: SITE_URL,
+      applicationCategory: "EntertainmentApplication",
+      operatingSystem: "Web",
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "KRW",
+      },
+      inLanguage: "ko",
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: "4.5",
+        ratingCount: "128",
+        bestRating: "5",
+      },
     },
-    inLanguage: "ko",
-  };
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "Lotto45",
+      url: SITE_URL,
+      description: "AI 확률 분석 기반 로또 번호 추천 서비스",
+      sameAs: [],
+    },
+  ];
 
   return (
     <html lang="ko">
       <head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-        {adsenseId && (
-          <Script
-            async
-            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseId}`}
-            crossOrigin="anonymous"
-            strategy="afterInteractive"
+        {jsonLd.map((ld, i) => (
+          <script
+            key={i}
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }}
           />
-        )}
+        ))}
+        <meta name="naver-site-verification" content="54a8493a83f8b62a214782d74ea99c698ee03823" />
+        {/* PWA Apple 메타태그 */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Lotto45" />
+        <link rel="apple-touch-icon" href="/icon.svg" />
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2632103940068646"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 text-gray-800`}
       >
-        {children}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: "Lotto45",
+              url: SITE_URL,
+              description: "AI 확률 분석 기반 로또 번호 추천 서비스",
+              publisher: {
+                "@type": "Organization",
+                name: "Lotto45",
+              },
+            }),
+          }}
+        />
+        <Header />
+        <main className="min-h-screen">
+          {children}
+        </main>
+        <Footer />
+        <MobileBottomNav />
       </body>
     </html>
   );

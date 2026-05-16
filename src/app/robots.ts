@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: '*',
       allow: '/',
     },
-    sitemap: 'https://lotto-predictor-two.vercel.app/sitemap.xml',
+    sitemap: 'https://lotto45.kr/sitemap.xml',
   }
 }

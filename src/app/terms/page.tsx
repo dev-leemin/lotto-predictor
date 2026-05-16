@@ -1,62 +1,57 @@
-'use client'
+import type { Metadata } from 'next'
 
-import Link from 'next/link'
+export const metadata: Metadata = {
+  title: '이용약관',
+  description: 'Lotto45 서비스 이용약관입니다.',
+  alternates: { canonical: 'https://lotto45.kr/terms' },
+}
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen bg-[#0f0f1a]">
-      {/* 배경 효과 */}
-      <div className="fixed inset-0 -z-10">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-transparent to-pink-900/20" />
-      </div>
-
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        {/* 뒤로가기 */}
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-purple-400 hover:text-purple-300 transition-colors mb-8"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          홈으로 돌아가기
-        </Link>
+    <div>
+      <div className="max-w-4xl mx-auto px-4 py-8 pb-24 lg:pb-8">
+        {/* 브레드크럼 */}
+        <nav className="text-xs text-gray-500 mb-6">
+          <a href="/" className="hover:text-indigo-600">홈</a>
+          <span className="mx-2">/</span>
+          <span className="text-gray-900">이용약관</span>
+        </nav>
 
         {/* 제목 */}
-        <h1 className="text-3xl font-bold text-white mb-2">이용약관</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">이용약관</h1>
         <p className="text-sm text-gray-500 mb-10">
           최종 수정일: 2025년 6월 15일
         </p>
 
-        <div className="space-y-10 text-gray-300 leading-relaxed">
+        <div className="space-y-10 text-gray-600 leading-relaxed">
           {/* 1. 서비스 개요 */}
           <section>
-            <h2 className="text-xl font-bold text-white mb-4 pb-2 border-b border-white/10">
+            <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b border-gray-200">
               1. 서비스 개요
             </h2>
             <p className="mb-4">
-              내로또(이하 &quot;서비스&quot;)는 과거 로또 6/45 및 연금복권 720+
-              당첨 데이터를 기반으로 한 <span className="text-white font-medium">통계 분석 도구</span>입니다.
+              Lotto45(이하 &quot;서비스&quot;)는 과거 로또 6/45 및 연금복권 720+
+              당첨 데이터를 기반으로 한 <span className="text-gray-900 font-medium">통계 분석 도구</span>입니다.
             </p>
-            <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-              <p className="text-sm text-gray-400">
+            <div className="p-4 rounded-xl bg-gray-50 border border-gray-200">
+              <p className="text-sm text-gray-500">
                 본 서비스는 확률론, 빈도 분석, CDM(Conditional Distribution Model) 등
                 통계적 기법을 활용하여 번호를 분석하고 추천합니다. 이는 순수한 정보
-                제공 목적이며, <span className="text-yellow-400 font-medium">도박이나 베팅을 권유하거나 조장하는 서비스가 아닙니다.</span>
+                제공 목적이며, <span className="text-amber-600 font-medium">도박이나 베팅을 권유하거나 조장하는 서비스가 아닙니다.</span>
               </p>
             </div>
           </section>
 
           {/* 2. 면책 조항 */}
           <section>
-            <h2 className="text-xl font-bold text-white mb-4 pb-2 border-b border-white/10">
+            <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b border-gray-200">
               2. 면책 조항 (당첨 비보장)
             </h2>
-            <div className="p-5 rounded-xl bg-red-500/10 border border-red-500/30 mb-4">
-              <p className="text-red-300 font-medium mb-3">
+            <div className="p-5 rounded-xl bg-red-50 border border-red-200 mb-4">
+              <p className="text-red-600 font-medium mb-3">
                 본 서비스는 어떠한 경우에도 당첨을 보장하지 않습니다.
               </p>
-              <ul className="list-disc list-inside space-y-2 text-sm text-gray-400">
+              <ul className="list-disc list-inside space-y-2 text-sm text-gray-500">
                 <li>
                   로또 및 연금복권은 완전한 무작위(랜덤) 추첨으로, 과거 데이터 분석을
                   통해 미래 결과를 예측하는 것은 원천적으로 불가능합니다.
@@ -75,7 +70,7 @@ export default function TermsPage() {
 
           {/* 3. 책임감 있는 복권 구매 */}
           <section>
-            <h2 className="text-xl font-bold text-white mb-4 pb-2 border-b border-white/10">
+            <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b border-gray-200">
               3. 책임감 있는 복권 구매
             </h2>
             <p className="mb-4">
@@ -83,10 +78,10 @@ export default function TermsPage() {
               중독으로 이어질 수 있으며, 본인과 가족에게 심각한 피해를 줄 수 있습니다.
             </p>
 
-            <div className="p-5 rounded-xl bg-yellow-500/10 border border-yellow-500/30 space-y-4">
+            <div className="p-5 rounded-xl bg-amber-50 border border-amber-200 space-y-4">
               <div>
-                <h3 className="font-bold text-yellow-300 mb-2">건전한 복권 이용 수칙</h3>
-                <ul className="list-disc list-inside space-y-1 text-sm text-gray-400">
+                <h3 className="font-bold text-amber-700 mb-2">건전한 복권 이용 수칙</h3>
+                <ul className="list-disc list-inside space-y-1 text-sm text-gray-500">
                   <li>본인이 감당할 수 있는 금액 범위 내에서만 구매하세요.</li>
                   <li>복권 구매를 투자나 수입원으로 생각하지 마세요.</li>
                   <li>손실을 만회하려고 추가 구매를 하지 마세요.</li>
@@ -94,25 +89,25 @@ export default function TermsPage() {
                 </ul>
               </div>
 
-              <div className="pt-4 border-t border-yellow-500/20">
-                <h3 className="font-bold text-yellow-300 mb-2">도박 중독 상담</h3>
-                <p className="text-sm text-gray-400 mb-2">
+              <div className="pt-4 border-t border-amber-200">
+                <h3 className="font-bold text-amber-700 mb-2">도박 중독 상담</h3>
+                <p className="text-sm text-gray-500 mb-2">
                   복권 구매로 인해 일상에 문제가 생겼다면 전문 상담을 받으시기 바랍니다.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="p-3 rounded-lg bg-white/5 flex-1">
-                    <p className="text-sm font-bold text-white">한국도박문제관리센터</p>
-                    <p className="text-lg font-bold text-yellow-400 mt-1">1336</p>
+                  <div className="p-3 rounded-lg bg-white border border-gray-200 flex-1">
+                    <p className="text-sm font-bold text-gray-900">한국도박문제관리센터</p>
+                    <p className="text-lg font-bold text-amber-600 mt-1">1336</p>
                     <p className="text-xs text-gray-500">24시간 무료 상담</p>
                   </div>
-                  <div className="p-3 rounded-lg bg-white/5 flex-1">
-                    <p className="text-sm font-bold text-white">정신건강 위기상담전화</p>
-                    <p className="text-lg font-bold text-yellow-400 mt-1">1577-0199</p>
+                  <div className="p-3 rounded-lg bg-white border border-gray-200 flex-1">
+                    <p className="text-sm font-bold text-gray-900">정신건강 위기상담전화</p>
+                    <p className="text-lg font-bold text-amber-600 mt-1">1577-0199</p>
                     <p className="text-xs text-gray-500">24시간 무료 상담</p>
                   </div>
-                  <div className="p-3 rounded-lg bg-white/5 flex-1">
-                    <p className="text-sm font-bold text-white">도박중독 상담전화</p>
-                    <p className="text-lg font-bold text-yellow-400 mt-1">1393</p>
+                  <div className="p-3 rounded-lg bg-white border border-gray-200 flex-1">
+                    <p className="text-sm font-bold text-gray-900">도박중독 상담전화</p>
+                    <p className="text-lg font-bold text-amber-600 mt-1">1393</p>
                     <p className="text-xs text-gray-500">자살예방 상담전화</p>
                   </div>
                 </div>
@@ -122,12 +117,12 @@ export default function TermsPage() {
 
           {/* 4. 이용 연령 제한 */}
           <section>
-            <h2 className="text-xl font-bold text-white mb-4 pb-2 border-b border-white/10">
+            <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b border-gray-200">
               4. 이용 연령 제한
             </h2>
-            <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+            <div className="p-4 rounded-xl bg-gray-50 border border-gray-200">
               <p>
-                본 서비스는 <span className="text-white font-bold">만 18세 이상</span>의
+                본 서비스는 <span className="text-gray-900 font-bold">만 18세 이상</span>의
                 성인만 이용할 수 있습니다. 「복권 및 복권기금법」에 따라 만 18세 미만은
                 복권 구매가 금지되어 있으며, 본 서비스 역시 미성년자의 이용을
                 허용하지 않습니다.
@@ -137,10 +132,10 @@ export default function TermsPage() {
 
           {/* 5. 지적재산권 */}
           <section>
-            <h2 className="text-xl font-bold text-white mb-4 pb-2 border-b border-white/10">
+            <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b border-gray-200">
               5. 지적재산권
             </h2>
-            <ul className="list-disc list-inside space-y-2 text-gray-400">
+            <ul className="list-disc list-inside space-y-2 text-gray-500">
               <li>
                 본 서비스의 디자인, 로고, 소스 코드, 분석 알고리즘, 콘텐츠 등
                 일체의 지적재산권은 서비스 운영자에게 귀속됩니다.
@@ -159,13 +154,13 @@ export default function TermsPage() {
 
           {/* 6. 책임의 제한 */}
           <section>
-            <h2 className="text-xl font-bold text-white mb-4 pb-2 border-b border-white/10">
+            <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b border-gray-200">
               6. 책임의 제한
             </h2>
             <p className="mb-4">
               서비스 운영자는 다음 사항에 대해 책임을 지지 않습니다.
             </p>
-            <ul className="list-disc list-inside space-y-2 text-gray-400">
+            <ul className="list-disc list-inside space-y-2 text-gray-500">
               <li>
                 서비스 이용으로 인해 발생한 직접적, 간접적, 부수적, 결과적 손해
               </li>
@@ -188,7 +183,7 @@ export default function TermsPage() {
 
           {/* 7. 서비스 변경 및 중단 */}
           <section>
-            <h2 className="text-xl font-bold text-white mb-4 pb-2 border-b border-white/10">
+            <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b border-gray-200">
               7. 서비스 변경 및 중단
             </h2>
             <p>
@@ -200,13 +195,13 @@ export default function TermsPage() {
 
           {/* 8. 이용자의 의무 */}
           <section>
-            <h2 className="text-xl font-bold text-white mb-4 pb-2 border-b border-white/10">
+            <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b border-gray-200">
               8. 이용자의 의무
             </h2>
             <p className="mb-4">
               이용자는 서비스를 이용함에 있어 다음 행위를 하여서는 안 됩니다.
             </p>
-            <ul className="list-disc list-inside space-y-2 text-gray-400">
+            <ul className="list-disc list-inside space-y-2 text-gray-500">
               <li>서비스의 운영을 방해하는 일체의 행위</li>
               <li>서비스 콘텐츠의 무단 복제, 배포, 상업적 이용</li>
               <li>자동화된 수단(봇, 크롤러 등)을 이용한 대량 접근</li>
@@ -217,7 +212,7 @@ export default function TermsPage() {
 
           {/* 9. 약관의 변경 */}
           <section>
-            <h2 className="text-xl font-bold text-white mb-4 pb-2 border-b border-white/10">
+            <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b border-gray-200">
               9. 약관의 변경
             </h2>
             <p>
@@ -229,7 +224,7 @@ export default function TermsPage() {
 
           {/* 10. 준거법 및 관할 */}
           <section>
-            <h2 className="text-xl font-bold text-white mb-4 pb-2 border-b border-white/10">
+            <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b border-gray-200">
               10. 준거법 및 관할
             </h2>
             <p>
@@ -238,22 +233,29 @@ export default function TermsPage() {
               관할 법원을 전속적 관할 법원으로 합니다.
             </p>
           </section>
-        </div>
 
-        {/* 하단 링크 */}
-        <div className="mt-12 pt-8 border-t border-white/10 flex justify-center gap-6">
-          <Link
-            href="/"
-            className="text-purple-400 hover:text-purple-300 transition-colors"
-          >
-            홈으로 돌아가기
-          </Link>
-          <Link
-            href="/privacy-policy"
-            className="text-gray-500 hover:text-gray-400 transition-colors"
-          >
-            개인정보처리방침
-          </Link>
+          {/* 11. 문의 */}
+          <section>
+            <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+              11. 문의
+            </h2>
+            <p>
+              서비스 이용 관련 문의사항이 있으시면 아래로 연락해 주시기 바랍니다.
+            </p>
+            <div className="mt-4 p-4 rounded-xl bg-gray-50 border border-gray-200">
+              <p className="text-sm text-gray-500">
+                서비스명: Lotto45
+                <br />
+                이메일:{' '}
+                <a
+                  href="mailto:leemin.dev@gmail.com"
+                  className="text-indigo-600 hover:text-indigo-500 transition-colors"
+                >
+                  leemin.dev@gmail.com
+                </a>
+              </p>
+            </div>
+          </section>
         </div>
       </div>
     </div>

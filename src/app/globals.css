@@ -1,10 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0f0f1a;
-  --foreground: #ffffff;
-  --card-bg: rgba(255, 255, 255, 0.05);
-  --card-border: rgba(255, 255, 255, 0.1);
+  --background: #F9FAFB;
+  --foreground: #1F2937;
+  --primary: #4F46E5;
+  --primary-light: #EEF2FF;
+  --card-bg: #FFFFFF;
+  --card-border: #E5E7EB;
 }
 
 @theme inline {
@@ -14,80 +16,150 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* ===== 기본 앱 스타일 ===== */
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* 앱 느낌 - 스크롤 바운스 방지 (모바일) */
+  overscroll-behavior-y: none;
+  /* 모바일 탭 하이라이트 제거 */
+  -webkit-tap-highlight-color: transparent;
+  /* 터치 기기에서 빠른 반응 */
+  touch-action: manipulation;
 }
 
-/* 로또 번호 색상 */
-.lotto-ball {
-  @apply w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg shadow-lg;
+/* 텍스트 선택 색상 */
+::selection {
+  background: rgba(79, 70, 229, 0.15);
+  color: inherit;
 }
 
-.lotto-ball-1-10 {
-  @apply bg-gradient-to-br from-yellow-400 to-yellow-600 text-yellow-900;
+/* ===== 카드 ===== */
+.card {
+  @apply bg-white border border-gray-200 rounded-2xl p-4 sm:p-6;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-.lotto-ball-11-20 {
-  @apply bg-gradient-to-br from-blue-400 to-blue-600 text-white;
-}
-
-.lotto-ball-21-30 {
-  @apply bg-gradient-to-br from-red-400 to-red-600 text-white;
-}
-
-.lotto-ball-31-40 {
-  @apply bg-gradient-to-br from-gray-400 to-gray-600 text-white;
-}
-
-.lotto-ball-41-45 {
-  @apply bg-gradient-to-br from-green-400 to-green-600 text-white;
-}
-
-/* 연금복권 숫자 */
-.pension-number {
-  @apply w-10 h-12 rounded-lg flex items-center justify-center font-bold text-xl;
-  @apply bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-lg;
-}
-
-.pension-group {
-  @apply w-8 h-10 rounded flex items-center justify-center font-bold;
-  @apply bg-gradient-to-br from-amber-400 to-orange-500 text-white;
-}
-
-/* 스피너 */
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+/* 모바일에서 카드 active 상태 */
+@media (hover: none) {
+  .card:active {
+    transform: scale(0.98);
   }
 }
 
+/* ===== 로또 볼 ===== */
+.lotto-ball {
+  @apply rounded-full flex items-center justify-center font-bold;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.lotto-ball-1-10  { background: #FBC400; color: #7A5C00; }
+.lotto-ball-11-20 { background: #69C8F2; color: #FFFFFF; }
+.lotto-ball-21-30 { background: #FF7272; color: #FFFFFF; }
+.lotto-ball-31-40 { background: #AAAAAA; color: #FFFFFF; }
+.lotto-ball-41-45 { background: #B0D840; color: #FFFFFF; }
+
+/* ===== 연금복권 ===== */
+.pension-number {
+  @apply w-9 h-10 sm:w-10 sm:h-11 rounded-lg flex items-center justify-center font-bold text-base sm:text-lg text-white;
+  background: #8B5CF6;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.pension-group {
+  @apply w-8 h-10 sm:w-9 sm:h-11 rounded-lg flex items-center justify-center font-bold text-sm text-white;
+  background: #F59E0B;
+}
+
+/* ===== 스피너 ===== */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 .animate-spin {
   animation: spin 1s linear infinite;
 }
 
-/* 카드 호버 효과 */
-.card-hover {
-  @apply transition-all duration-300;
+/* ===== 하단 네비게이션 safe area ===== */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-.card-hover:hover {
-  @apply transform -translate-y-1 shadow-xl;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+/* ===== 스크롤바 최소화 (모바일 앱 느낌) ===== */
+@media (max-width: 1023px) {
+  ::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+  * {
+    scrollbar-width: none;
+  }
 }
 
-/* 그라데이션 텍스트 */
-.gradient-text {
-  @apply bg-clip-text text-transparent;
-  background-image: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+/* ===== 버튼 기본 스타일 ===== */
+button, a {
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* 글로우 효과 */
-.glow {
-  box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+/* 버튼 누르기 효과 */
+button:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
-.glow-gold {
-  box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+/* ===== 페이지 전환 애니메이션 ===== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+main {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* ===== 하단 네비 위 그라데이션 페이드 ===== */
+.bottom-nav-gradient::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: linear-gradient(to top, rgba(255,255,255,0.9), transparent);
+  pointer-events: none;
+}
+
+/* ===== PWA Standalone 모드 최적화 ===== */
+@media (display-mode: standalone) {
+  body {
+    /* 상태바 영역 패딩 */
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
+/* ===== 풀다운 리프레시 방지 (앱 느낌) ===== */
+body {
+  overscroll-behavior: none;
+}
+
+/* ===== 입력 필드 앱 스타일 ===== */
+input, select, textarea {
+  font-size: 16px; /* iOS에서 줌 방지 */
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
 }

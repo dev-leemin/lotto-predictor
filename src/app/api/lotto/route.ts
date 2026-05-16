@@ -3,6 +3,9 @@ import prisma from '@/lib/prisma'
 import { analyzeLottoCDM, LottoResultData } from '@/lib/cdm-predictor'
 import { updateLottoDB } from '@/lib/lottery-fetcher'
 import { generateBacktestSets, getConsensusNumbers } from '@/lib/backtest-recommender'
+import { analyzeMarkovChain } from '@/lib/markov-predictor'
+import { runMonteCarloSimulation } from '@/lib/montecarlo-simulator'
+import { calculateEnsemble } from '@/lib/ensemble-scorer'
 
 // 캐시 (서버 메모리) - 1시간 캐시
 let cachedResponse: Record<string, unknown> | null = null
@@ -91,6 +94,18 @@ export async function GET(request: NextRequest) {
     // CDM 논문 기반 분석 실행
     const analysis = analyzeLottoCDM(results)
 
+    // Markov Chain 분석
+    const markov = analyzeMarkovChain(results)
+
+    // Monte Carlo 시뮬레이션 (CDM + Markov 점수 기반)
+    const cdmForMC = analysis.rankedNumbers.map(r => ({ number: r.number, score: r.cdmScore }))
+    const markovForMC = markov.scores.map(s => ({ number: s.number, score: s.score }))
+    const monteCarlo = runMonteCarloSimulation(cdmForMC, markovForMC)
+
+    // 앙상블 (CDM 40% + Markov 30% + MC 30%)
+    const mcForEnsemble = monteCarlo.scores.map(s => ({ number: s.number, score: s.score }))
+    const ensemble = calculateEnsemble(cdmForMC, markovForMC, mcForEnsemble)
+
     // 백테스트 기반 추천 생성
     const backtestSets = generateBacktestSets(results)
     const consensusNumbers = getConsensusNumbers(results)
@@ -165,6 +180,12 @@ export async function GET(request: NextRequest) {
       lastUpdate: new Date().toISOString(),
       backtestSets,
       consensusNumbers: consensusNumbers.slice(0, 10),
+      // 앙상블 분석 결과
+      markovSets: markov.sets,
+      monteCarloSets: monteCarlo.sets,
+      ensembleRanking: ensemble.ranking.slice(0, 15),
+      ensembleSets: ensemble.sets,
+      ensembleWeights: ensemble.weights,
     }
 
     // 최신 조회 시에만 캐시 저장

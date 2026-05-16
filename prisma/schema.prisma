@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = []
 }
 
 datasource db {
@@ -52,4 +53,57 @@ model PensionLotteryResult {
   updatedAt  DateTime @updatedAt
 
   @@index([round])
+}
+
+// ========== 커뮤니티 게시판 ==========
+
+enum PostCategory {
+  FREE    // 자유게시판
+  SHARE   // 번호공유
+  WINNING // 당첨후기
+}
+
+model Post {
+  id           Int          @id @default(autoincrement())
+  category     PostCategory @default(FREE)
+  title        String       @db.VarChar(100)
+  content      String       @db.Text
+  nickname     String       @db.VarChar(20)
+  passwordHash String
+  views        Int          @default(0)
+  likesCount   Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  comments Comment[]
+  likes    PostLike[]
+
+  @@index([category, createdAt(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
+  @@index([likesCount(sort: Desc)])
+}
+
+model Comment {
+  id           Int      @id @default(autoincrement())
+  postId       Int
+  content      String   @db.VarChar(500)
+  nickname     String   @db.VarChar(20)
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt(sort: Desc)])
+}
+
+model PostLike {
+  id        Int      @id @default(autoincrement())
+  postId    Int
+  visitorId String   @db.VarChar(64)
+  createdAt DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, visitorId])
+  @@index([postId])
 }
