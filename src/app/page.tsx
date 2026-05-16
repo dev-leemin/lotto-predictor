@@ -135,7 +135,6 @@ export default function Home() {
         }
         if (picked.length === 6 && isValid(picked)) return picked.sort((a, b) => a - b)
       }
-      // 필터 조건이 너무 엄격하면 유효성 체크 없이 생성
       const pool = Array.from({ length: 45 }, (_, i) => i + 1)
         .filter(n => !excludeNumbers.includes(n))
       const picked: number[] = [...includeNumbers.filter(n => !excludeNumbers.includes(n))]
@@ -411,129 +410,13 @@ export default function Home() {
         })}}
       />
 
-      {/* 히어로 - 서비스 소개 */}
-      <section className="mb-8 sm:mb-10">
+      {/* 히어로 - 간결한 소개 */}
+      <section className="mb-5 sm:mb-6">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
           이번 주 로또 번호, AI가 분석해 드립니다
         </h1>
-        <p className="text-sm sm:text-base text-gray-600 mt-3 leading-relaxed max-w-3xl">
-          Lotto45는 역대 1,200회 이상의 로또 6/45 당첨 데이터를 <strong>3가지 독립적인 통계 모델</strong>(CDM 확률 분포, 마르코프 체인, 몬테카를로 시뮬레이션)로
-          분석하여 번호를 추천하는 무료 서비스입니다.
-          각 모델의 결과를 앙상블(Ensemble) 기법으로 종합해 단일 모델보다 안정적인 추천을 제공합니다.
-        </p>
-        <p className="text-xs sm:text-sm text-gray-400 mt-2">
-          연금복권 720+ 분석, 당첨 통계, 세금 계산기, 확률 계산기까지 모두 무료로 이용하실 수 있습니다.
-        </p>
-      </section>
-
-      {/* 한국 로또 6/45 기본 안내 */}
-      <section className="mb-8 sm:mb-10">
-        <div className="p-5 sm:p-7 rounded-2xl bg-white border border-gray-200 shadow-sm">
-          <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 mb-4">
-            한국 로또 6/45 기본 안내
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
-            <div>
-              <h3 className="text-sm font-bold text-gray-800 mb-2">추첨 방식</h3>
-              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                로또 6/45는 1부터 45까지의 숫자 중 6개의 당첨번호와 1개의 보너스 번호를 추첨하는 복권입니다.
-                매주 토요일 오후 8시 35분에 MBC에서 생방송으로 추첨이 진행되며,
-                동행복권에서 운영합니다. 1게임당 1,000원이며 한 장에 최대 5게임까지 구매할 수 있습니다.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-gray-800 mb-2">당첨 등수</h3>
-              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                1등은 6개 번호 모두 일치(확률 1/8,145,060), 2등은 5개 + 보너스 번호 일치(1/1,357,510),
-                3등은 5개 일치(1/35,724), 4등은 4개 일치(1/733, 고정 5만원),
-                5등은 3개 일치(1/45, 고정 5천원)입니다.
-                1~3등 당첨금은 총 판매액의 비율로 배분되므로 매 회차 달라집니다.
-              </p>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div>
-              <h3 className="text-sm font-bold text-gray-800 mb-2">구매 방법</h3>
-              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                전국 로또 판매점에서 직접 구매하거나, 동행복권 공식 사이트(dhlottery.co.kr)에서
-                온라인 구매가 가능합니다. 온라인 구매는 만 19세 이상, 본인 인증 후 이용할 수 있으며
-                매주 토요일 오후 8시에 판매가 마감됩니다. 자동, 수동, 반자동 선택이 가능합니다.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-gray-800 mb-2">당첨금 수령</h3>
-              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                5등(5천원)은 모든 판매점에서 즉시 수령, 4등(5만원)은 판매점 또는 농협 지점에서 수령 가능합니다.
-                3등 이상은 농협은행 본점에서 신분증 지참 후 수령하며, 1등은 법률 자문을 받은 후 수령하는 것이 좋습니다.
-                당첨금 지급 기한은 추첨일로부터 1년입니다.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* AI 분석 방법 소개 */}
-      <section className="mb-8 sm:mb-10">
-        <div className="p-5 sm:p-7 rounded-2xl bg-white border border-gray-200 shadow-sm">
-          <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 mb-4">
-            Lotto45의 AI 분석은 어떻게 작동하나요?
-          </h2>
-          <p className="text-sm sm:text-base text-gray-600 leading-relaxed mb-5">
-            Lotto45는 역대 로또 당첨 데이터를 기반으로 3가지 독립적인 통계 모델을 실행하고,
-            그 결과를 종합하는 <strong>앙상블(Ensemble) 분석</strong> 방식을 사용합니다.
-            단일 모델의 편향을 줄이고, 다각도에서 번호를 평가하여 보다 균형 잡힌 추천 번호를 제공합니다.
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            <div className="p-4 rounded-xl bg-indigo-50 border border-indigo-100">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-600 text-white text-xs font-bold">1</span>
-                <h3 className="text-sm font-bold text-indigo-900">CDM 확률 모델</h3>
-              </div>
-              <p className="text-xs sm:text-sm text-indigo-700 leading-relaxed">
-                조건부 확률 분포(Conditional Distribution Model)를 활용하여 각 번호의 출현 빈도, 최근 등장 주기, 연번 패턴을 종합 분석합니다.
-                최근 20회차에 가중치를 두어 트렌드를 반영합니다.
-              </p>
-            </div>
-            <div className="p-4 rounded-xl bg-violet-50 border border-violet-100">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-violet-600 text-white text-xs font-bold">2</span>
-                <h3 className="text-sm font-bold text-violet-900">Markov Chain</h3>
-              </div>
-              <p className="text-xs sm:text-sm text-violet-700 leading-relaxed">
-                마르코프 체인은 이전 회차 당첨번호를 &quot;상태&quot;로 보고, 다음 상태로 전이될 확률을 계산합니다.
-                번호 간 동반 출현 관계와 연속적인 패턴 변화를 포착하는 데 효과적입니다.
-              </p>
-            </div>
-            <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-100">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-600 text-white text-xs font-bold">3</span>
-                <h3 className="text-sm font-bold text-emerald-900">Monte Carlo</h3>
-              </div>
-              <p className="text-xs sm:text-sm text-emerald-700 leading-relaxed">
-                몬테카를로 시뮬레이션은 수천 회의 가상 추첨을 실행하여 통계적으로 유의미한 번호 조합을 도출합니다.
-                각 번호의 기대 빈도와 실제 빈도 차이를 기반으로 유망 번호를 선별합니다.
-              </p>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-xl bg-gray-50 border border-gray-200">
-            <h3 className="text-sm font-bold text-gray-800 mb-2">앙상블 분석이란?</h3>
-            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-              3개 모델의 결과를 가중 평균으로 결합합니다. 각 모델이 독립적으로 높은 점수를 부여한 번호일수록
-              최종 추천 순위가 올라갑니다. 이 방식은 머신러닝에서 널리 사용되는 기법으로,
-              단일 모델 대비 예측 안정성이 높은 것이 특징입니다.
-              다만 로또는 완전 무작위 추첨이므로 과거 데이터 기반 분석이 미래 결과를 보장하지는 않습니다.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* 번호 분석 도��� */}
-      <section className="mb-6">
-        <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 mb-4">번호 분석 도구</h2>
-        <p className="text-xs sm:text-sm text-gray-500 mb-4">
-          아래 도구를 사용하여 AI 분석 결과를 확인하고, 스마트 랜덤 번호를 생성할 수 있습니다.
+        <p className="text-sm text-gray-500 mt-2">
+          CDM + Markov Chain + Monte Carlo 앙상블 분석 | 역대 {lottoData ? `${lottoData.totalRounds}` : '1,200'}회차 데이터 기반
         </p>
       </section>
 
@@ -598,7 +481,7 @@ export default function Home() {
 
           <p className="text-base sm:text-lg font-medium text-gray-900 mb-1">{loadingState.status}</p>
           <p className="text-xs sm:text-sm text-gray-500 mb-4">
-            {tab === 'lotto' ? '최근 200회차 데이터를 분석합니다' : '연금복권 데이터를 분석합니��'}
+            {tab === 'lotto' ? '최근 200회차 데이터를 분석합니다' : '연금복권 데이터를 분석합니다'}
           </p>
 
           <div className="grid grid-cols-2 gap-3 w-full max-w-xs sm:max-w-sm mt-2">
@@ -686,8 +569,111 @@ export default function Home() {
         />
       )}
 
-      {/* 당첨번호 선택 전략 */}
+      {/* 한국 로또 6/45 기본 안내 */}
       <section className="mt-8 sm:mt-10">
+        <div className="p-5 sm:p-7 rounded-2xl bg-white border border-gray-200 shadow-sm">
+          <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 mb-4">
+            한국 로또 6/45 기본 안내
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
+            <div>
+              <h3 className="text-sm font-bold text-gray-800 mb-2">추첨 방식</h3>
+              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                로또 6/45는 1부터 45까지의 숫자 중 6개의 당첨번호와 1개의 보너스 번호를 추첨하는 복권입니다.
+                매주 토요일 오후 8시 35분에 MBC에서 생방송으로 추첨이 진행되며,
+                동행복권에서 운영합니다. 1게임당 1,000원이며 한 장에 최대 5게임까지 구매할 수 있습니다.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-gray-800 mb-2">당첨 등수</h3>
+              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                1등은 6개 번호 모두 일치(확률 1/8,145,060), 2등은 5개 + 보너스 번호 일치(1/1,357,510),
+                3등은 5개 일치(1/35,724), 4등은 4개 일치(1/733, 고정 5만원),
+                5등은 3개 일치(1/45, 고정 5천원)입니다.
+                1~3등 당첨금은 총 판매액의 비율로 배분되므로 매 회차 달라집니다.
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <h3 className="text-sm font-bold text-gray-800 mb-2">구매 방법</h3>
+              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                전국 로또 판매점에서 직접 구매하거나, 동행복권 공식 사이트(dhlottery.co.kr)에서
+                온라인 구매가 가능합니다. 온라인 구매는 만 19세 이상, 본인 인증 후 이용할 수 있으며
+                매주 토요일 오후 8시에 판매가 마감됩니다. 자동, 수동, 반자동 선택이 가능합니다.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-gray-800 mb-2">당첨금 수령</h3>
+              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                5등(5천원)은 모든 판매점에서 즉시 수령, 4등(5만원)은 판매점 또는 농협 지점에서 수령 가능합니다.
+                3등 이상은 농협은행 본점에서 신분증 지참 후 수령하며, 1등은 법률 자문을 받은 후 수령하는 것이 좋습니다.
+                당첨금 지급 기한은 추첨일로부터 1년입니다.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* AI 분석 방법 소개 */}
+      <section className="mt-6 sm:mt-8">
+        <div className="p-5 sm:p-7 rounded-2xl bg-white border border-gray-200 shadow-sm">
+          <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 mb-4">
+            Lotto45의 AI 분석은 어떻게 작동하나요?
+          </h2>
+          <p className="text-sm sm:text-base text-gray-600 leading-relaxed mb-5">
+            Lotto45는 역대 로또 당첨 데이터를 기반으로 3가지 독립적인 통계 모델을 실행하고,
+            그 결과를 종합하는 <strong>앙상블(Ensemble) 분석</strong> 방식을 사용합니다.
+            단일 모델의 편향을 줄이고, 다각도에서 번호를 평가하여 보다 균형 잡힌 추천 번호를 제공합니다.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <div className="p-4 rounded-xl bg-indigo-50 border border-indigo-100">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-600 text-white text-xs font-bold">1</span>
+                <h3 className="text-sm font-bold text-indigo-900">CDM 확률 모델</h3>
+              </div>
+              <p className="text-xs sm:text-sm text-indigo-700 leading-relaxed">
+                조건부 확률 분포(Conditional Distribution Model)를 활용하여 각 번호의 출현 빈도, 최근 등장 주기, 연번 패턴을 종합 분석합니다.
+                최근 20회차에 가중치를 두어 트렌드를 반영합니다.
+              </p>
+            </div>
+            <div className="p-4 rounded-xl bg-violet-50 border border-violet-100">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-violet-600 text-white text-xs font-bold">2</span>
+                <h3 className="text-sm font-bold text-violet-900">Markov Chain</h3>
+              </div>
+              <p className="text-xs sm:text-sm text-violet-700 leading-relaxed">
+                마르코프 체인은 이전 회차 당첨번호를 &quot;상태&quot;로 보고, 다음 상태로 전이될 확률을 계산합니다.
+                번호 간 동반 출현 관계와 연속적인 패턴 변화를 포착하는 데 효과적입니다.
+              </p>
+            </div>
+            <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-100">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-600 text-white text-xs font-bold">3</span>
+                <h3 className="text-sm font-bold text-emerald-900">Monte Carlo</h3>
+              </div>
+              <p className="text-xs sm:text-sm text-emerald-700 leading-relaxed">
+                몬테카를로 시뮬레이션은 수천 회의 가상 추첨을 실행하여 통계적으로 유의미한 번호 조합을 도출합니다.
+                각 번호의 기대 빈도와 실제 빈도 차이를 기반으로 유망 번호를 선별합니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-gray-50 border border-gray-200">
+            <h3 className="text-sm font-bold text-gray-800 mb-2">앙상블 분석이란?</h3>
+            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+              3개 모델의 결과를 가중 평균으로 결합합니다. 각 모델이 독립적으로 높은 점수를 부여한 번호일수록
+              최종 추천 순위가 올라갑니다. 이 방식은 머신러닝에서 널리 사용되는 기법으로,
+              단일 모델 대비 예측 안정성이 높은 것이 특징입니다.
+              다만 로또는 완전 무작위 추첨이므로 과거 데이터 기반 분석이 미래 결과를 보장하지는 않습니다.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 당첨번호 선택 전략 */}
+      <section className="mt-6 sm:mt-8">
         <div className="p-5 sm:p-7 rounded-2xl bg-white border border-gray-200 shadow-sm">
           <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 mb-4">
             통계로 보는 당첨번호 선택 전략
