@@ -48,6 +48,15 @@ export const metadata: Metadata = {
     "로또 랜덤 번호",
     "로또 당첨 번호 분석",
     "로또 번호 뽑기",
+    "로또",
+    "로또추천",
+    "복권번호",
+    "로또번호",
+    "복권",
+    "로또 번호",
+    "이번주 로또",
+    "로또 번호 추천 사이트",
+    "로또 무료 번호",
   ],
   authors: [{ name: "Lotto45" }],
   creator: "Lotto45",
@@ -71,12 +80,21 @@ export const metadata: Metadata = {
     title: "이번주 로또 번호 추천 - 무료 AI 번호 생성기 | Lotto45",
     description:
       "이번주 로또 번호 뭐 살까? AI가 분석한 추천 번호를 무료로 받아보세요!",
+    images: [
+      {
+        url: "https://lotto45.kr/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Lotto45 - AI 로또 번호 추천 서비스",
+      },
+    ],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "이번주 로또 번호 추천 - 무료 AI 번호 생성기 | Lotto45",
     description:
       "이번주 로또 번호 뭐 살까? AI가 분석한 추천 번호를 무료로 받아보세요!",
+    images: ["https://lotto45.kr/og-image.png"],
   },
   alternates: {
     canonical: SITE_URL,
@@ -167,6 +185,14 @@ export default function RootLayout({
               publisher: {
                 "@type": "Organization",
                 name: "Lotto45",
+              },
+              potentialAction: {
+                "@type": "SearchAction",
+                target: {
+                  "@type": "EntryPoint",
+                  urlTemplate: `${SITE_URL}/blog?q={search_term_string}`,
+                },
+                "query-input": "required name=search_term_string",
               },
             }),
           }}
