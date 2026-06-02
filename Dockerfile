@@ -26,6 +26,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ARG DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
 ENV DATABASE_URL=${DATABASE_URL}
 
+# AdSense 클라이언트 ID (빌드 시 NEXT_PUBLIC_ 변수 인라인 필요)
+ENV NEXT_PUBLIC_ADSENSE_ID=ca-pub-2632103940068646
+
 RUN npm run build
 
 # ===== Stage 3: Runner =====
