@@ -5,6 +5,7 @@ import { LottoFullAnalysis, PensionAnalysis, LoadingState } from '@/types/lotto'
 import { formatTime } from '@/lib/lotto-utils'
 import LottoTab from '@/components/LottoTab'
 import PensionTab from '@/components/PensionTab'
+import AdBanner from '@/components/AdBanner'
 
 type Tab = 'lotto' | 'pension'
 
@@ -672,6 +673,10 @@ export default function Home() {
         </div>
       </section>
 
+      <div className="mt-6 sm:mt-8">
+        <AdBanner slot="home-mid" />
+      </div>
+
       {/* 당첨번호 선택 전략 */}
       <section className="mt-6 sm:mt-8">
         <div className="p-5 sm:p-7 rounded-2xl bg-white border border-gray-200 shadow-sm">
@@ -830,6 +835,10 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <div className="mt-6 sm:mt-8">
+        <AdBanner slot="home-bottom" />
+      </div>
 
       {/* 블로그 미리보기 */}
       <div className="mt-6 sm:mt-8">

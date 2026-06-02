@@ -40,6 +40,13 @@ export default function Footer() {
             </div>
           </div>
         </div>
+        <div className="border-t border-gray-200 pt-6 mb-6">
+          <div className="text-center text-xs text-gray-400 space-y-1">
+            <p className="font-medium text-gray-500">Lotto45 | 운영자: 이상민</p>
+            <p>이메일: leemin.dev@gmail.com</p>
+            <p>본 서비스는 통계 분석 기반 정보 제공 목적이며, 복권 판매와 무관합니다.</p>
+          </div>
+        </div>
         <div className="border-t border-gray-200 pt-6 text-center">
           <p className="text-sm text-gray-500">
             로또는 무작위 추첨이며, 본 서비스는 통계 분석 도구입니다. 과도한 구매는 삼가세요.

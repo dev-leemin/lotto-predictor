@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import AdBanner from '@/components/AdBanner'
 
 export default function TaxCalculatorPage() {
   const [inputValue, setInputValue] = useState('')
@@ -466,6 +467,10 @@ export default function TaxCalculatorPage() {
               <p className="text-xs text-gray-500 mt-0.5">등수별 세율, 절세 팁, 실수령액 비교까지 총정리</p>
             </div>
           </a>
+        </div>
+
+        <div className="mt-6 sm:mt-8">
+          <AdBanner slot="tax-bottom" />
         </div>
 
         {/* 면책 문구 */}

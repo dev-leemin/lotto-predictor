@@ -118,12 +118,6 @@ export default function RootLayout({
         priceCurrency: "KRW",
       },
       inLanguage: "ko",
-      aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: "4.5",
-        ratingCount: "128",
-        bestRating: "5",
-      },
     },
     {
       "@context": "https://schema.org",

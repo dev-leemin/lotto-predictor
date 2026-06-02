@@ -1,6 +1,7 @@
 import { blogPosts } from '@/data/blog-posts'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
+import AdBanner from '@/components/AdBanner'
 
 export function generateStaticParams() {
   return blogPosts.map((post) => ({ slug: post.slug }))
@@ -111,6 +112,10 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
         </article>
+
+        <div className="my-8">
+          <AdBanner slot="blog-post-mid" />
+        </div>
 
         {/* 관련 글 */}
         {relatedPosts.length > 0 && (

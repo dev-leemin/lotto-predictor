@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { blogPosts } from '@/data/blog-posts'
+import AdBanner from '@/components/AdBanner'
 
 const categoryColors: Record<string, string> = {
   '당첨 가이드': 'bg-indigo-100 text-indigo-700 border-indigo-200',
@@ -97,6 +98,10 @@ export default function BlogClient() {
               </button>
             )
           })}
+        </div>
+
+        <div className="mb-6">
+          <AdBanner slot="blog-list-mid" />
         </div>
 
         {/* 블로그 그리드 */}

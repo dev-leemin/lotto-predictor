@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import StatsCharts from './StatsCharts'
+import AdBanner from '@/components/AdBanner'
 
 export const metadata: Metadata = {
   title: '로또 역대 당첨 번호 통계 - 가장 많이 나온 번호는?',
@@ -260,6 +261,10 @@ export default function StatsPage() {
             </div>
           </div>
         </section>
+
+        <div className="mt-6 sm:mt-8">
+          <AdBanner slot="stats-bottom" />
+        </div>
 
         {/* CTA */}
         <div className="p-6 rounded-2xl bg-indigo-50 border border-indigo-200 text-center">
