@@ -266,8 +266,27 @@ export default function StatsPage() {
           <AdBanner slot="stats-bottom" />
         </div>
 
+        {/* 관련 블로그 글 */}
+        <div className="p-5 rounded-2xl bg-white border border-gray-200 shadow-sm">
+          <h2 className="text-base font-bold text-gray-900 mb-3">통계 분석 더 알아보기</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <a href="/blog/number-frequency-deep-analysis" className="block p-3 rounded-xl bg-gray-50 hover:bg-indigo-50 border border-gray-100 hover:border-indigo-200 transition-all">
+              <p className="text-sm font-medium text-gray-900">번호 출현 빈도 심층 분석</p>
+              <p className="text-xs text-gray-500 mt-1">가장 많이/적게 나온 번호의 진실</p>
+            </a>
+            <a href="/blog/sum-range-strategy" className="block p-3 rounded-xl bg-gray-50 hover:bg-indigo-50 border border-gray-100 hover:border-indigo-200 transition-all">
+              <p className="text-sm font-medium text-gray-900">합계 구간 전략</p>
+              <p className="text-xs text-gray-500 mt-1">당첨번호 합계 100~175의 비밀</p>
+            </a>
+            <a href="/blog/hot-cold-numbers" className="block p-3 rounded-xl bg-gray-50 hover:bg-indigo-50 border border-gray-100 hover:border-indigo-200 transition-all">
+              <p className="text-sm font-medium text-gray-900">핫넘버 vs 콜드넘버</p>
+              <p className="text-xs text-gray-500 mt-1">자주 나오는 번호, 정말 효과 있을까?</p>
+            </a>
+          </div>
+        </div>
+
         {/* CTA */}
-        <div className="p-6 rounded-2xl bg-indigo-50 border border-indigo-200 text-center">
+        <div className="mt-4 p-6 rounded-2xl bg-indigo-50 border border-indigo-200 text-center">
           <h2 className="text-lg font-bold text-gray-900 mb-2">AI가 분석한 이번 주 추천 번호는?</h2>
           <p className="text-sm text-gray-500 mb-4">역대 통계를 기반으로 CDM + 앙상블 분석 결과를 확인하세요.</p>
           <a
